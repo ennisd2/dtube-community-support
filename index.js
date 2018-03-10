@@ -50,10 +50,10 @@ function stream()
 											{
 												// if 480p not available
 												var videohash = json_metadata.video.content.videohash;
-												}
+											
 											}
 
-											var videohash = json_metadata.video.content.video480hash;
+
 									
 											console.log("############# " + videohash + " detected")
 											db.get("metadata_store", function(err, metadata_store){
