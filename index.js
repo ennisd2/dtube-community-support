@@ -43,6 +43,16 @@ function stream()
 									[
 										function(callback) 
 										{
+											if(json_metadata.video.content.video480hash!=undefined) {
+												var videohash = json_metadata.video.content.video480hash;
+											}
+											else
+											{
+												// if 480p not available
+												var videohash = json_metadata.video.content.videohash;
+												}
+											}
+
 											var videohash = json_metadata.video.content.video480hash;
 									
 											console.log("############# " + videohash + " detected")
