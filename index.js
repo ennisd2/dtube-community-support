@@ -44,7 +44,6 @@ function stream()
 										function(callback) 
 										{
 											var videohash = json_metadata.video.content.video480hash;
-											console.log(json_metadata.tags)
 									
 											console.log("############# " + videohash + " detected")
 											db.get("metadata_store", function(err, metadata_store){
@@ -108,7 +107,7 @@ function stream()
 										},
 										function(metadata_store, videohash, callback){
 											db.save("metadata_store", metadata_store, function(err){
-												console.log("############# " + videohash + " metadata stored ###########");
+												console.log("############# " + videohash + " metadata stored");
 											});
 										}
 									]);
