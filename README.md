@@ -14,8 +14,18 @@ Install : https://ipfs.io/docs/install/
 # Install
 
 Clone the repo
+<<<<<<< HEAD
+<<<<<<< HEAD
 > cd ./dtube-community-support
 > npm install
+=======
+cd ./dtube-community-support
+npm install
+>>>>>>> main
+=======
+cd ./dtube-community-support
+npm install
+>>>>>>> main
 
 
 # Configuration
@@ -24,6 +34,8 @@ In default configuration, DCS will check for francophone videos. You can change 
 "tags" is an array, you can add many tags in order to support multiple communities.
 
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 # Start the collector
 
 
@@ -66,3 +78,14 @@ This command takes one argument
 This command takes one argument
 * -p=pinset : Delete the following pinset (eg: npm run rm -- -p=QmSe462BD2S3EFhgwotGtjS86LJhzzsqqPUmR8j2vbHY4W)
 
+=======
+=======
+>>>>>>> main
+
+# Start
+
+npm start
+<<<<<<< HEAD
+>>>>>>> main
+=======
+>>>>>>> main
