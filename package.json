@@ -2,20 +2,30 @@
   "name": "dtube-community-support",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
+    "help": "npm-run-help",
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "list": "node app.js list",
+    "listAuthor": "node app.js listAuthor",
+    "add": "node app.js addPin",
+    "rm": "node app.js deletePin",
+    "show": "node app.js show"
   },
   "author": "evildido <evildido@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "async": "^2.6.0",
+    "columnify": "^1.5.4",
     "config.json": "0.0.4",
+    "help": "^3.0.2",
     "ipfs": "^0.28.0",
     "ipfs-api": "^18.1.1",
     "jfs": "^0.3.0",
+    "parse-cli-arguments": "^1.0.1",
     "steem": "^0.7.1",
     "steemjs": "^1.0.4"
+  },
+  "devDependencies": {
+    "npm-run-help": "^1.1.0"
   }
 }
