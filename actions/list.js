@@ -141,7 +141,9 @@ exports.list = function () {
 					tmp.date=new Date(result.date);
 					tmp.size = Number(result.size/1000000).toFixed(2) + "Mo";
 					tmp.link = result.link;
+					list.push(tmp);
 				});
+
 				console.log(columnify(list,{columnSplitter: ' | '}));
 			});
 
