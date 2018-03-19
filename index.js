@@ -114,7 +114,7 @@ function stream()
 													metadata.permlink = result[1].parent_permlink;
 													metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
 													metadata.size = size;
-													metadata.date = new Date(result.created);
+													metadata.date = new Date(result[1].created);
 													metadata_store.push(metadata);
 													callback(null, metadata_store, pinset[0].hash);
 												});
