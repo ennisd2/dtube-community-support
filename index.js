@@ -21,12 +21,7 @@ Array.prototype.random = function () {
 steem.api.setOptions({ transport: 'http', uri: config.rpc_nodes.random(), url: config.rpc_nodes.random() });
 //steem.api.setOptions({ transport: 'http', uri: config.rpc_nodes[0], url: config.rpc_nodes[0] });
 stream();
-/*
-const steem = require('steem');
-steem.api.setOptions({ transport: 'http', uri: 'https://rpc.steemviz.com', url: 'https://rpc.steemviz.com' });
-var test1;
-function lala() {test1=steem.api.streamOperations("irreversible",(err, result) => {}}
-*/
+
 
 function stream()
 {
@@ -94,6 +89,7 @@ function stream()
 										},
 										function(metadata_store,videohash,callback) {
 											ipfs.pin.add(videohash, function(err1, pinset) {
+
 												//Pin ressource
 												size = 0;
 												ipfs.ls(pinset[0].hash, function(err2,parts) {
@@ -114,7 +110,7 @@ function stream()
 													metadata.permlink = result[1].parent_permlink;
 													metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
 													metadata.size = size;
-													metadata.date = new Date(result[1].created);
+													metadata.date = Date();
 													metadata_store.push(metadata);
 													callback(null, metadata_store, pinset[0].hash);
 												});
