@@ -7,6 +7,7 @@ var db = new Store("./data");
 var async = require("async");
 
 var list = require('./list.js');
+var utils=require('../utils/utils.js');
 
 
 let args = require('parse-cli-arguments')({
@@ -23,41 +24,55 @@ let args = require('parse-cli-arguments')({
 exports.deletePin = function() {
 
 	async.waterfall([
+		
 		function(callback) {
-			db.get("metadata_store", function(err, metadata_store){
-				if(metadata_store.some(function(r){return r.pinset===args.pinset})) {
-					callback(null,metadata_store);
-				}
-				else
-				{
-					callback(true);
-				}
-				
-			});
+			output = {};
+			output.pinset = args.pinset;
+			callback(null,output);
 		},
-		function(metadata_store,callback) {
-			ipfs.pin.rm(args.pinset, { recursive: true },function(err,pinset){
-				if(!err) {
-					console.log("############# " + pinset[0].hash + " removed from node");
-					callback(null,metadata_store,pinset[0].hash);
-				}
-				else
-				{
-					if(err.message=="not pinned") {
-						callback(null,metadata_store,args.pinset);
+		utils.ifExistInDB,
+		function(input,exist,callback) {
+			if(exist) {
+				ipfs.pin.rm(input.pinset, { recursive: true },function(err,pinset){
+					if(!err) {
+						console.log("############# " + input.pinset + " removed from node");
+						callback(null,input);
 					}
 					else
 					{
-						console.log(args.pinset + " not removed");
-						console.log(err.message);
-						callback(true);
+						if(err.message=="not pinned") {
+							callback(null,input);
+						}
+						else
+						{
+							console.log(input.pinset + " not removed");
+							console.log(err.message);
+							callback(true);
+						}
+	
 					}
-
-				}
-			});
+				});
+			}
+			else
+			{
+				callback(true);
+			}
 		},
-		function(metadata_store,pinset,callback) {
-			metadata_store = metadata_store.filter(result => {return result.pinset!=pinset});
+		utils.ifExistInDB,
+		function(input,exist,callback) {
+			if(exist) {
+				db.get("metadata_store", function(err,metadata_store) {
+					if(err) callback(true);
+					callback(null,metadata_store,input);
+				});
+			}
+			else
+			{
+				callback(true);
+			}
+		},
+		function(metadata_store,input,callback) {
+			metadata_store = metadata_store.filter(result => {return result.pinset!=input.pinset});
 			db.save("metadata_store", metadata_store, function(err){
 				callback(null)
 			});
