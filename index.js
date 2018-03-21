@@ -63,7 +63,17 @@ function streamOp()
 											output.pinset=hash;
 											callback(null,output)
 										},
-										ifExistInDB,
+										utils.ifExistInDB,
+										function(input,exist,callback) {
+											if(!exist)
+											{
+												callback(null,input);
+											}
+											else
+											{
+												callback(true);
+											}
+										},
 										ifAdding,
 										function(input,callback) {
 											ipfs.pin.add(input.pinset, function(err1, pinset) {
@@ -94,13 +104,19 @@ function streamOp()
 												});
 											});
 										},
-										ifExistInDB,
-										function(metadata,callback) {
-											db.get("metadata_store", function(err, metadata_store){
-												if(err) metadata_store=[];
-												metadata_store.push(metadata);
-												callback(null,metadata_store,metadata.pinset);
-											});
+										utils.ifExistInDB,
+										function(metadata,exist,callback) {
+											if(!exist) {
+												db.get("metadata_store", function(err, metadata_store){
+													if(err) metadata_store=[];
+													metadata_store.push(metadata);
+													callback(null,metadata_store,metadata.pinset);
+												});
+											}
+											else
+											{
+												callback(true);
+											}
 										},
 										function(metadata_store, hash, callback){
 											db.save("metadata_store", metadata_store, function(err){
@@ -147,30 +163,7 @@ function ifAdding(input,callback) {
 }
 
 
-function ifExistInDB(input,callback) {
-	
-	db.get("metadata_store", function(err, metadata_store){
-		if(!err)
-		{
-			
-			if(metadata_store.some(function(r){return r.pinset===input.pinset})) {
-				console.log(input.pinset + " already stored")
-				callback(true);
-			}
-			else
-			{
-				console.log(input.pinset + " not already stored");
-				callback(null,input);
-			}
-		}
-		else
-		{
-			//console.log(err);
-			console.log("database empty... continue")
-			callback(null,input);
-		}
-	});
-}
+
 
 process.on('uncaughtException', function (err) {
     console.log('error','UNCAUGHT EXCEPTION - keeping process alive:',  err.message);

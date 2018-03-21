@@ -44,6 +44,9 @@ switch(args._args[0]) {
 	case "show":
 		list.showPinset();
 		break;
+	case "report":
+		list.report();
+		break;
 
 }
 
