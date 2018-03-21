@@ -14,7 +14,7 @@ Install : https://ipfs.io/docs/install/
 # Install
 
 Clone the repo
-<<<<<<< HEAD
+
 
 > cd ./dtube-community-support
 > npm install
@@ -31,7 +31,7 @@ In default configuration, DCS will check for francophone videos. You can change 
 "tags" is an array, you can add many tags in order to support multiple communities.
 
 
-<<<<<<< HEAD
+
 # Start the collector
 
 
@@ -79,4 +79,4 @@ This command takes one argument
 # Start
 
 npm start
->>>>>>> main
+
