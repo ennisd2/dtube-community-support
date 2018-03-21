@@ -124,7 +124,7 @@ function streamOp()
 				console.log("restart stream() function ")
 				stream();
 				utils.failover();
-				stream();
+				streamOp();
 
 
 			},10000);
