@@ -20,17 +20,18 @@ Array.prototype.random = function () {
 
 steem.api.setOptions({ transport: 'http', uri: config.rpc_nodes.random(), url: config.rpc_nodes.random() });
 //steem.api.setOptions({ transport: 'http', uri: config.rpc_nodes[0], url: config.rpc_nodes[0] });
-stream();
+streamOp();
 
 
-function stream()
+function streamOp()
 {
 	console.log("---" + steem.api.options.url)
-	streamvar = steem.api.streamOperations("irreversible",(err, result) => {
+	stream = steem.api.streamOperations("irreversible",(err, result) => {
 		try 
 		{	
 		
-				if(result[0]=='comment') {
+				if(result[0]=='comment') 
+				{
 					//verify if no a response and if json_metadata is not empty
 					if(result[1].parent_author == "" && result[1].json_metadata!='{}' && result[1].json_metadata!="")
 					{
@@ -50,53 +51,30 @@ function stream()
 										function(callback) 
 										{
 											if(json_metadata.video.content.video480hash!=undefined) {
-												var videohash = json_metadata.video.content.video480hash;
+												var hash = json_metadata.video.content.video480hash;
 											}
 											else
 											{
 												// if 480p not available
-												var videohash = json_metadata.video.content.videohash;
-											
+												var hash = json_metadata.video.content.videohash;
 											}
-											
-											console.log("############# " + videohash + " detected")
-											db.get("metadata_store", function(err, metadata_store){
-												if(!err)
-												{
-													if (metadata_store.some(function(r){return r.pinset===videohash}) || save.some(function(el){return el===videohash})) {
-														
-														console.log(videohash + " already stored");
-														callback(true);
-													}
-													else
-													{
-														
-														console.log(videohash + " not already stored");
-														save.push=videohash;
-														
-													}
-												}
-												else
-												{
-													console.log(videohash + " not already stored");
-													console.log("metadata file is empty");
-													metadata_store=[];
-													save.push=videohash;
-													
-												}
-												callback(null,metadata_store,videohash);
-											});
+											console.log("############# " + hash + " detected")
+											output = {};
+											output.pinset=hash;
+											callback(null,output)
 										},
-										function(metadata_store,videohash,callback) {
-											ipfs.pin.add(videohash, function(err1, pinset) {
+										ifExistInDB,
+										ifAdding,
+										function(input,callback) {
+											ipfs.pin.add(input.pinset, function(err1, pinset) {
 
 												//Pin ressource
 												size = 0;
-												ipfs.ls(pinset[0].hash, function(err2,parts) {
+												ipfs.ls(input.pinset, function(err2,parts) {
 													parts.forEach(function(part) {
 														size += part.size;
 													});
-													console.log("############# " + pinset[0].hash + " added to node");
+													console.log("############# " + input.pinset + " added to node");
 													console.log("Author : " + result[1].author);
 													console.log("Title : " + result[1].title);
 													console.log("Permlink : " + result[1].permlink);
@@ -104,21 +82,29 @@ function stream()
 													console.log("Size : " + size);
 													console.log("Date : " + Date());
 													metadata = {};
-													metadata.pinset = pinset[0].hash;
+													metadata.pinset = input.pinset;
 													metadata.author = result[1].author;
 													metadata.title = result[1].title;
 													metadata.permlink = result[1].parent_permlink;
 													metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
 													metadata.size = size;
 													metadata.date = Date();
-													metadata_store.push(metadata);
-													callback(null, metadata_store, pinset[0].hash);
+													save = save.filter(function(el){return el!==input.pinset;});
+													callback(null, metadata);
 												});
 											});
 										},
-										function(metadata_store, videohash, callback){
+										ifExistInDB,
+										function(metadata,callback) {
+											db.get("metadata_store", function(err, metadata_store){
+												if(err) metadata_store=[];
+												metadata_store.push(metadata);
+												callback(null,metadata_store,metadata.pinset);
+											});
+										},
+										function(metadata_store, hash, callback){
 											db.save("metadata_store", metadata_store, function(err){
-												console.log("############# " + videohash + " metadata stored");
+												console.log("############# " + hash + " metadata stored");
 											});
 										}
 									]);
@@ -136,7 +122,7 @@ function stream()
 				console.log(error.name)
 				console.log(error.message);
 				console.log("restart stream() function ")
-				streamvar();
+				stream();
 				utils.failover();
 				stream();
 
@@ -147,12 +133,45 @@ function stream()
 	});
 }
 
+function ifAdding(input,callback) {
+	if(save.some(function(el){return el===input.hash})) {
+		console.log(hash + " already Pinning");
+		callback(true);
+	}
+	else
+	{
+		callback(null,input);
+
+	}
+
+}
+
+
+function ifExistInDB(input,callback) {
+	
+	db.get("metadata_store", function(err, metadata_store){
+		if(!err)
+		{
+			
+			if(metadata_store.some(function(r){return r.pinset===input.pinset})) {
+				console.log(input.pinset + " already stored")
+				callback(true);
+			}
+			else
+			{
+				console.log(input.pinset + " not already stored");
+				callback(null,input);
+			}
+		}
+		else
+		{
+			//console.log(err);
+			console.log("database empty... continue")
+			callback(null,input);
+		}
+	});
+}
+
 process.on('uncaughtException', function (err) {
     console.log('error','UNCAUGHT EXCEPTION - keeping process alive:',  err.message);
 });
-
-
-
-
-
-
