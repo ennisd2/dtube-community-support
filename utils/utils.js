@@ -32,12 +32,12 @@ exports.ifExistInDB = function(input,callback) {
     {
       
       if(metadata_store.some(function(r){return r.pinset===input.pinset})) {
-        console.log(input.pinset + " already stored")
+        //console.log(input.pinset + " already stored")
         exist=true;
       }
       else
       {
-        console.log(input.pinset + " not already stored");
+        //console.log(input.pinset + " not already stored");
         exist=false;
       }
     }

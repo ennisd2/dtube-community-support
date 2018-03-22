@@ -5,7 +5,28 @@ var config = require('config.json')('./config.json');
 var Store = require("jfs");
 var db = new Store("data");
 var async = require("async");
+var winston = require('winston');
+require('winston-daily-rotate-file');
+
 var utils = require('./utils/utils.js');
+
+
+var transport = new (winston.transports.DailyRotateFile)({
+    filename: 'application-%DATE%.log',
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '14d'
+  });
+
+var logger = new (winston.Logger)({
+    transports: [
+      transport
+    ]
+  });
+
+
+
 
 var dtube_app = config.dtube_app;
 var tags = config.tags;
@@ -25,7 +46,7 @@ streamOp();
 
 function streamOp()
 {
-	console.log("---" + steem.api.options.url)
+	logger.info("---" + steem.api.options.url)
 	stream = steem.api.streamOperations("irreversible",(err, result) => {
 		try 
 		{	
@@ -58,7 +79,7 @@ function streamOp()
 												// if 480p not available
 												var hash = json_metadata.video.content.videohash;
 											}
-											console.log("############# " + hash + " detected")
+											logger.info("############# " + hash + " detected")
 											output = {};
 											output.pinset=hash;
 											callback(null,output)
@@ -67,10 +88,12 @@ function streamOp()
 										function(input,exist,callback) {
 											if(!exist)
 											{
+												logger.info(input.pinset + " not in DB. store it")
 												callback(null,input);
 											}
 											else
 											{
+												logger.info(input.pinset + " already exist. skip it")
 												callback(true);
 											}
 										},
@@ -84,13 +107,13 @@ function streamOp()
 													parts.forEach(function(part) {
 														size += part.size;
 													});
-													console.log("############# " + input.pinset + " added to node");
-													console.log("Author : " + result[1].author);
-													console.log("Title : " + result[1].title);
-													console.log("Permlink : " + result[1].permlink);
-													console.log("Link : " + "/#!/v/" + result[1].author + "/" + result[1].permlink);
-													console.log("Size : " + size);
-													console.log("Date : " + Date());
+													logger.info("############# " + input.pinset + " added to node");
+													logger.info("Author : " + result[1].author);
+													logger.info("Title : " + result[1].title);
+													logger.info("Permlink : " + result[1].permlink);
+													logger.info("Link : " + "/#!/v/" + result[1].author + "/" + result[1].permlink);
+													logger.info("Size : " + size);
+													logger.info("Date : " + Date());
 													metadata = {};
 													metadata.pinset = input.pinset;
 													metadata.author = result[1].author;
@@ -120,7 +143,7 @@ function streamOp()
 										},
 										function(metadata_store, hash, callback){
 											db.save("metadata_store", metadata_store, function(err){
-												console.log("############# " + hash + " metadata stored");
+												logger.info("############# " + hash + " metadata stored");
 											});
 										}
 									]);
@@ -135,9 +158,9 @@ function streamOp()
 			
 			//console.log(error);
 			setTimeout(function(){ 
-				console.log(error.name)
-				console.log(error.message);
-				console.log("restart stream() function ")
+				logger.warn(error.name)
+				logger.warn(error.message);
+				logger.warn("restart stream() function ")
 				stream();
 				utils.failover();
 				streamOp();
@@ -150,12 +173,13 @@ function streamOp()
 }
 
 function ifAdding(input,callback) {
-	if(save.some(function(el){return el===input.hash})) {
-		console.log(hash + " already Pinning");
+	if(save.some(function(el){return el===input.pinset})) {
+		logger.info(input.pinset + " already Pinning");
 		callback(true);
 	}
 	else
 	{
+		save.push(input.pinset);
 		callback(null,input);
 
 	}
@@ -166,5 +190,5 @@ function ifAdding(input,callback) {
 
 
 process.on('uncaughtException', function (err) {
-    console.log('error','UNCAUGHT EXCEPTION - keeping process alive:',  err.message);
+    logger.warn('error','UNCAUGHT EXCEPTION - keeping process alive:',  err.message);
 });

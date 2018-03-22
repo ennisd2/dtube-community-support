@@ -24,7 +24,9 @@
     "jfs": "^0.3.0",
     "parse-cli-arguments": "^1.0.1",
     "steem": "^0.7.1",
-    "steemjs": "^1.0.4"
+    "steemjs": "^1.0.4",
+    "winston": "^2.4.1",
+    "winston-daily-rotate-file": "^3.0.0"
   },
   "devDependencies": {
     "npm-run-help": "^1.1.0"
