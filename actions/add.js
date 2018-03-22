@@ -7,6 +7,7 @@ var db = new Store("./data");
 var async = require("async");
 
 var list = require('./list.js');
+var utils = require('../utils/utils.js');
 
 const dtube_regex = RegExp('https:\/\/d\.tube\/#!\/v\/(.*)\/(.*)$','g');
 let args = require('parse-cli-arguments')({
@@ -30,19 +31,6 @@ exports.addPin = function () {
 
 	async.waterfall([
 		function(callback) {
-			db.get("metadata_store", function(err, metadata_store){
-				if(!err) {
-					callback(null,metadata_store);
-				}
-				else
-				{
-					metadata_store = [];
-					callback(null,metadata_store)
-				}
-			});
-		},
-		function(metadata_store,callback) {
-			
 			steem.api.getContent(author,permlink, function(err, result) {
 				try {
 
@@ -61,21 +49,16 @@ exports.addPin = function () {
 							
 							}
 
-							if(metadata_store.some(function(r){return videohash === r.pinset})) {
-								console.log(videohash + " already exist")
-								callback(true);
-							}
-							else 
-							{
-								console.log(videohash + " detected");
-								metadata.pinset = videohash;
-								metadata.title = result.title;
-								metadata.author = author;
-								metadata.permlink = permlink;
-								metadata.link = "/#!/v/" + author + "/" + permlink;
-								metadata.date = new Date(result.created);
-								callback(null,metadata,metadata_store);
-							}			
+
+							console.log(videohash + " detected");
+							metadata.pinset = videohash;
+							metadata.title = result.title;
+							metadata.author = author;
+							metadata.permlink = permlink;
+							metadata.link = "/#!/v/" + author + "/" + permlink;
+							metadata.date = new Date(result.created);
+							callback(null,metadata);
+		
 						}	
 						else
 						{
@@ -98,39 +81,61 @@ exports.addPin = function () {
 				}
 			})
 		},
-		function(metadata,metadata_store,callback) {
-			console.log("Pinning the content, please wait...");
-			ipfs.pin.add(metadata.pinset, function(err1, pinset) {
-				try
-				{
-					var size = 0;
-					ipfs.ls(metadata.pinset, function(err2,parts) {
-						parts.forEach(function(part) {
-							size += part.size;
+		utils.ifExistInDB,
+
+		function(metadata,exist,callback) {
+			if(!exist)
+			{
+				console.log("Pinning the content, please wait...");
+				ipfs.pin.add(metadata.pinset, function(err1, pinset) {
+					try
+					{
+						var size = 0;
+						ipfs.ls(metadata.pinset, function(err2,parts) {
+							parts.forEach(function(part) {
+								size += part.size;
+							});
+							metadata.size = size;
+							console.log("############# " + metadata.pinset + " added to node");
+							console.log("Author : " + metadata.author);
+							console.log("Title : " + metadata.title);
+							console.log("Permlink : " + metadata.permlink);
+							console.log("Link : " + metadata.link);
+							console.log("Size : " + metadata.size);
+							console.log("Date : " + metadata.date);
+							callback(null, metadata);
 						});
-						metadata.size = size;
-						console.log("############# " + metadata.pinset + " added to node");
-						console.log("Author : " + metadata.author);
-						console.log("Title : " + metadata.title);
-						console.log("Permlink : " + metadata.permlink);
-						console.log("Link : " + metadata.link);
-						console.log("Size : " + metadata.size);
-						console.log("Date : " + metadata.date);
-						metadata_store.push(metadata);
-						callback(null, metadata_store, metadata.pinset);
-					});
-				}
-				catch(error) {
-					console.log(error.name);
-					console.log(error.message)
-					callback(true);
-				}
-			});
+					}
+					catch(error) {
+						console.log(error.name);
+						console.log(error.message)
+						callback(true);
+					}
+				});
+			}
+			else
+			{
+				callback(true);
+			}
 
 		},
-		function(metadata_store,pinset) {
+		utils.ifExistInDB,
+		function(metadata,exist,callback) {
+			if(!exist) {
+				db.get("metadata_store", function(err, metadata_store){
+					if(err) metadata_store=[];
+					metadata_store.push(metadata);
+					callback(null,metadata_store,metadata.pinset);
+				});
+			}
+			else
+			{
+				callback(true);
+			}
+		},
+		function(metadata_store,hash) {
 			db.save("metadata_store", metadata_store, function(err){
-				console.log("############# " + pinset + " metadata stored");
+				console.log("############# " + hash + " metadata stored");
 			});
 		}
 
