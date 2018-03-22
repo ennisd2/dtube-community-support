@@ -9,7 +9,8 @@
     "listAuthor": "node app.js listAuthor",
     "add": "node app.js addPin",
     "rm": "node app.js deletePin",
-    "show": "node app.js show"
+    "show": "node app.js show",
+    "report": "node app.js report"
   },
   "author": "evildido <evildido@gmail.com>",
   "license": "MIT",
