@@ -1,7 +1,7 @@
 const steem = require('steem');
 var config = require('config.json')('./config.json');
 var Store = require("jfs");
-var db = new Store("data");
+var db = new Store("./data");
 
 
 exports.failover = function() {
@@ -50,3 +50,5 @@ exports.ifExistInDB = function(input,callback) {
     callback(null,input,exist);
   });
 }
+
+
