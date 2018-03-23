@@ -27,20 +27,30 @@ var logger = new (winston.Logger)({
 
 
 
-
+//used to listen only dtube publication.
 var dtube_app = config.dtube_app;
+// used to pin content of one  of tags configured in configu.json
 var tags = config.tags;
+
+// 'save' is used to prevent to pin when authors edit dtube publication multiple times while video is 'pin add' is running
+// hash is added before "pin add"
+// hash is deleted after "pin add"
 var save = [];
 
-var streamvar;
+// used to stop streamOp when api return bad content (in catch)
+var stream;
 
 
 Array.prototype.random = function () {
   return this[Math.floor((Math.random()*this.length))];
 }
 
+logger.info("Start StreemOperation...");
+// Set api node randomly
 steem.api.setOptions({ transport: 'http', uri: config.rpc_nodes.random(), url: config.rpc_nodes.random() });
 //steem.api.setOptions({ transport: 'http', uri: config.rpc_nodes[0], url: config.rpc_nodes[0] });
+
+
 streamOp();
 
 
@@ -71,6 +81,7 @@ function streamOp()
 									[
 										function(callback) 
 										{
+											//collect videhash inside metadata
 											if(json_metadata.video.content.video480hash!=undefined) {
 												var hash = json_metadata.video.content.video480hash;
 											}
@@ -88,6 +99,7 @@ function streamOp()
 										function(input,exist,callback) {
 											if(!exist)
 											{
+												// Do no try to pin video if already in DB
 												logger.info(input.pinset + " not in DB. store it")
 												callback(null,input);
 											}
@@ -122,6 +134,8 @@ function streamOp()
 													metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
 													metadata.size = size;
 													metadata.date = Date();
+
+													// delete entrie in temp 'save' var
 													save = save.filter(function(el){return el!==input.pinset;});
 													callback(null, metadata);
 												});
@@ -156,13 +170,17 @@ function streamOp()
 		}
 		catch(error) {
 			
-			//console.log(error);
+			
 			setTimeout(function(){ 
 				logger.warn(error.name)
 				logger.warn(error.message);
 				logger.warn("restart stream() function ")
+				
+				// stop steemOP
 				stream();
+				// select now api node
 				utils.failover();
+				//restart function
 				streamOp();
 
 
@@ -173,8 +191,9 @@ function streamOp()
 }
 
 function ifAdding(input,callback) {
+	// check if pinset is in 'save'
 	if(save.some(function(el){return el===input.pinset})) {
-		logger.info(input.pinset + " already Pinning");
+		logger.info(input.pinset + " already Pinning. skip it");
 		callback(true);
 	}
 	else
