@@ -2,10 +2,25 @@ const steem = require('steem');
 var config = require('config.json')('./config.json');
 var Store = require("jfs");
 var db = new Store("./data");
+var winston = require('winston');
+require('winston-daily-rotate-file');
+
+var transport = new (winston.transports.DailyRotateFile)({
+    filename: 'log/application-%DATE%.log',
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '14d'
+  });
+
+var logger = new (winston.Logger)({
+    transports: [
+      transport
+    ]
+  });
 
 
 exports.failover = function() {
-	console.log("failover")
   if(config.rpc_nodes && config.rpc_nodes.length > 1) {
     var cur_node_index = config.rpc_nodes.indexOf(steem.api.options.url) + 1;
 
@@ -15,12 +30,11 @@ exports.failover = function() {
     var rpc_node = config.rpc_nodes[cur_node_index];
 
     steem.api.setOptions({ transport: 'http', uri: rpc_node, url: rpc_node });
-    console.log('');
-    console.log('***********************************************');
-    console.log('Failing over to: ' + rpc_node);
-    console.log(steem.api.options.url)
-    console.log('***********************************************');
-    console.log('');
+    logger.warn('');
+    logger.warn('***********************************************');
+    logger.warn('Failing over to: ' + rpc_node);
+    logger.warn('***********************************************');
+    logger.warn('');
   }
 }
 
