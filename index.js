@@ -100,12 +100,14 @@ function streamOp()
 											if(!exist)
 											{
 												// Do no try to pin video if already in DB
-												logger.info(input.pinset + " not in DB. store it")
+												logger.info(input.pinset + " not in DB.")
 												callback(null,input);
 											}
 											else
 											{
 												logger.info(input.pinset + " already exist. skip it")
+												// delete entrie in temp 'save' var
+												save = save.filter(function(el){return el!==input.pinset;});
 												callback(true);
 											}
 										},
@@ -135,8 +137,7 @@ function streamOp()
 													metadata.size = size;
 													metadata.date = Date();
 
-													// delete entrie in temp 'save' var
-													save = save.filter(function(el){return el!==input.pinset;});
+
 													callback(null, metadata);
 												});
 											});
@@ -148,6 +149,7 @@ function streamOp()
 													if(err) metadata_store=[];
 													metadata_store.push(metadata);
 													callback(null,metadata_store,metadata.pinset);
+
 												});
 											}
 											else
@@ -158,6 +160,8 @@ function streamOp()
 										function(metadata_store, hash, callback){
 											db.save("metadata_store", metadata_store, function(err){
 												logger.info("############# " + hash + " metadata stored");
+												// delete entrie in temp 'save' var
+												save = save.filter(function(el){return el!==input.pinset;});
 											});
 										}
 									]);
