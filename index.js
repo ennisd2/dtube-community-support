@@ -12,8 +12,8 @@ var utils = require('./utils/utils.js');
 
 
 var transport = new (winston.transports.DailyRotateFile)({
-    filename: 'application-%DATE%.log',
-    datePattern: 'YYYY-MM-DD-HH',
+    filename: 'log/application-%DATE%.log',
+    datePattern: 'YYYY-MM-DD',
     zippedArchive: true,
     maxSize: '20m',
     maxFiles: '14d'
@@ -172,8 +172,8 @@ function streamOp()
 			
 			
 			setTimeout(function(){ 
-				logger.warn(error.name)
-				logger.warn(error.message);
+				logger.debug(error.name)
+				logger.debug(error.message);
 				logger.warn("restart stream() function ")
 				
 				// stop steemOP
