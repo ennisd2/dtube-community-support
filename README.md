@@ -19,10 +19,6 @@ Clone the repo
 > cd ./dtube-community-support
 > npm install
 
-=======
-cd ./dtube-community-support
-npm install
->>>>>>> main
 
 
 # Configuration
@@ -74,9 +70,9 @@ This command takes one argument
 This command takes one argument
 * -p=pinset : Delete the following pinset (eg: npm run rm -- -p=QmSe462BD2S3EFhgwotGtjS86LJhzzsqqPUmR8j2vbHY4W)
 
-=======
 
-# Start
+
+# Start collector
 
 npm start
 
