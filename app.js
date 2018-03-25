@@ -41,6 +41,9 @@ switch(args._args[0]) {
 	case "deletePin":
 		del.deletePin();
 		break;
+	case "deleteAuthor":
+		del.deleteAuthor();
+		break;
 	case "show":
 		list.showPinset();
 		break;
