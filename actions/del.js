@@ -38,10 +38,8 @@ exports.deleteAuthor = function() {
 	async.waterfall([
 		function(callback) {
 			db.get("metadata_store", function(err, metadata){
-				console.log(err)
 				if(args.author!=undefined) {
 					result = filterByAuthor(args.author, metadata);
-					console.log(result)
 					if(result.metadata.length>0){
 						authorResultMetadata=result.metadata;
 						callback(null,authorResultMetadata);
@@ -74,7 +72,6 @@ exports.deleteAuthor = function() {
 		function(authorResultMetadata,callback){
 			db.get("metadata_store", function(err, metadata_store){
 				authorResultMetadata.forEach(result => {
-					console.log("=== " + result.pinset)
 					metadata_store = metadata_store.filter(re => {return re.pinset!=result.pinset});
 				})
 				callback(null,metadata_store);
