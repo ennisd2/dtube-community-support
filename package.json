@@ -9,6 +9,7 @@
     "listAuthor": "node app.js listAuthor",
     "add": "node app.js addPin",
     "rm": "node app.js deletePin",
+    "rmAuthor": "node app.js deleteAuthor",
     "show": "node app.js show",
     "report": "node app.js report"
   },
