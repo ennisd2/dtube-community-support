@@ -161,7 +161,7 @@ function streamOp()
 											db.save("metadata_store", metadata_store, function(err){
 												logger.info("############# " + hash + " metadata stored");
 												// delete entrie in temp 'save' var
-												save = save.filter(function(el){return el!==input.pinset;});
+												save = save.filter(function(el){return el!==hash;});
 											});
 										}
 									]);
@@ -215,3 +215,5 @@ function ifAdding(input,callback) {
 process.on('uncaughtException', function (err) {
     logger.warn('error','UNCAUGHT EXCEPTION - keeping process alive:',  err.message);
 });
+
+
