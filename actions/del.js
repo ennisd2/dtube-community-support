@@ -74,7 +74,6 @@ exports.deleteAuthor = function() {
 		function(authorResultMetadata,callback){
 			db.get("metadata_store", function(err, metadata_store){
 				authorResultMetadata.forEach(result => {
-					console.log("=== " + result.pinset)
 					metadata_store = metadata_store.filter(re => {return re.pinset!=result.pinset});
 				})
 				callback(null,metadata_store);
