@@ -14,10 +14,91 @@ let args = require('parse-cli-arguments')({
     options: {
 
         pinset: { alias: 'p' },
+        author: { alias: 'a'}
     }
 });
 
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
+}
 
+filterByAuthor = function(author,metadata) {
+	authorSize = 0;
+	result = {};
+	metadata = metadata.filter(result => {return result.author==author});
+
+	metadata.forEach(result => {authorSize+=result.size});
+	result.authorSize = authorSize;
+	result.metadata = metadata;
+	return result;
+}
+
+
+exports.deleteAuthor = function() {
+	async.waterfall([
+		function(callback) {
+			db.get("metadata_store", function(err, metadata){
+				console.log(err)
+				if(args.author!=undefined) {
+					result = filterByAuthor(args.author, metadata);
+					console.log(result)
+					if(result.metadata.length>0){
+						authorResultMetadata=result.metadata;
+						callback(null,authorResultMetadata);
+					}
+					else {
+						console.log(args.author + " not found in DB");
+						callback(true)
+					}
+				}
+				else {
+					console.log("Usage : npm run rmAuthor -- -a=myAuthor");
+					callback(true);
+				}
+			});
+		},
+		function(authorResultMetadata,callback) {
+			console.log("Deleting all content for : " + args.author);
+			async.forEachOf(authorResultMetadata,function(el,i,cb) {
+				ipfs.pin.rm(el.pinset, { recursive: true },function(err,pinset){
+					if(!err) console.log(pinset[0].hash + " removed");
+					cb();
+
+				});
+				//console.log(el.pinset)
+
+			}, function(err) {
+				callback(null,authorResultMetadata);
+			});
+		},
+		function(authorResultMetadata,callback){
+			db.get("metadata_store", function(err, metadata_store){
+				authorResultMetadata.forEach(result => {
+					console.log("=== " + result.pinset)
+					metadata_store = metadata_store.filter(re => {return re.pinset!=result.pinset});
+				})
+				callback(null,metadata_store);
+			})
+		},
+		function(metadata_store,callback) {
+			db.save("metadata_store", metadata_store, function(err){
+				callback(null)
+			});
+		},
+		function(callback) {
+			console.log("Running Garbage collector. Please wait..");
+			ipfs.repo.gc(function(err, res){
+				if(!err) {
+					console.log("Garbade collector done")
+				}
+				else {
+					console.log(err);
+				}
+			});
+
+		}
+	]);
+}
 
 
 
