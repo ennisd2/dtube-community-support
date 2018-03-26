@@ -14,13 +14,16 @@ services:
       - ./data:/data/ipfs/
     restart: always
 
-  dtubecs:
+  dcs:
     build: .
-    container_name: dtubecs
+    container_name: dcs
     volumes:
       - ./data:/opt/dcs/data
+      - ./log:/opt/dcs/log
     working_dir: /opt/dcs
     command: npm start
+    links:
+      - ipfs
     depends_on:
       - ipfs
     restart: always
