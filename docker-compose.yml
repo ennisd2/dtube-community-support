@@ -1,0 +1,27 @@
+version: "3"
+services:
+  ipfs:
+    container_name: "ipfs"
+    expose:
+      - 4001
+      - 8080
+    ports:
+      - 4001:4001
+      - 5001:5001
+      - 8090:8090
+    image: ipfs/go-ipfs
+    volumes:
+      - ./data:/data/ipfs/
+    restart: always
+
+  dtubecs:
+    build: .
+    container_name: dtubecs
+    volumes:
+      - ./data:/opt/dcs/data
+    working_dir: /opt/dcs
+    command: npm start
+    depends_on:
+      - ipfs
+    restart: always
+
