@@ -12,6 +12,8 @@ Install Docker Compose: https://docs.docker.com/compose/install/
 ### Installing on Ubuntu 16.04:
 > apt-get update
 
+> apt-get install docker-ce
+
 > sudo curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 
 > git clone https://github.com/evildido/dtube-community-support.git
