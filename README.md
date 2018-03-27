@@ -18,6 +18,8 @@ Install Docker Compose: https://docs.docker.com/compose/install/
 
 > cd ./dtube-community-support
 
+Edit the config.json file and customize your tags and RPC (optional)
+
 - Build and test: `docker-compose up` (CTRL + C to exit)
 Go have a coffee while it builds
 - To launch in the background: `docker-compose up -d`
