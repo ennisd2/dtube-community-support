@@ -12,7 +12,7 @@ services:
     image: ipfs/go-ipfs
     volumes:
       - ./data:/data/ipfs/
-    command: --routing=dhtclient --enable-gc
+    command: daemon --routing=dhtclient --enable-gc
     restart: always
 
   dcs:
