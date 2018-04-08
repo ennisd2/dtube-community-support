@@ -10,5 +10,6 @@
 		"https://seed.bitcoiner.me",
     	"https://steemd.minnowsupportproject.org",
     	"https://steemd.privex.io"
-	]
+	],
+	"blacklist": []
 }

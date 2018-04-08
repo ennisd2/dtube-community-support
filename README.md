@@ -26,6 +26,8 @@ Clone the repo
 In default configuration, DCS will check for francophone videos. You can change that by modifying "tags" in config.js file.
 "tags" is an array, you can add many tags in order to support multiple communities.
 
+"blacklist" is an array allowing not storing the contents.
+
 
 
 # Start the collector

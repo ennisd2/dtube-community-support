@@ -31,6 +31,7 @@ var logger = new (winston.Logger)({
 var dtube_app = config.dtube_app;
 // used to pin content of one  of tags configured in configu.json
 var tags = config.tags;
+var blacklist = config.blacklist;
 
 // 'save' is used to prevent to pin when authors edit dtube publication multiple times while video is 'pin add' is running
 // hash is added before "pin add"
@@ -72,11 +73,12 @@ function streamOp()
 					//verify if app is not undefined
 					if(json_metadata.app !='{}' && json_metadata.app!=""  && json_metadata.app != undefined)
 					{
+
 						//select dtube publication
 						if(json_metadata.app.includes(dtube_app))
 						{
-							//select specific tags
-							if(json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}))
+							//select tags AND not in blacklist 
+							if(json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}) && (blacklist.indexOf(result[1].author) === -1))
 							{
 								async.waterfall (
 								[
