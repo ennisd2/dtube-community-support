@@ -40,6 +40,15 @@ filterByDate = function(date, metadata) {
 
 }
 
+filterByPinset = function(pinset, metadata) {
+	metadataFilter = metadata.filter(result => {
+		 return result.pinset==pinset
+	});
+
+	return metadataFilter;
+
+}
+
 remove = function(metadata) {
 
 	async.waterfall([
@@ -89,7 +98,21 @@ remove = function(metadata) {
 
 
 exports.main = function() {
-	if(args.date != undefined) {
+	if(args.pinset != undefined) {
+		db.get("metadata_store", function(err, metadata){
+			pinset = args.pinset;
+			result = filterByPinset(pinset, metadata);
+			if(result.length>0){
+				remove(result);
+			}
+			else {
+				console.log(pinset + " not found in DB");
+			}
+
+		});
+
+	}
+	else if(args.date != undefined) {
 		date = new Date(args.date);
 		if(!isNaN(date.getTime()))
 		{
@@ -121,82 +144,3 @@ exports.main = function() {
 
 	}
 };
-
-
-
-exports.deletePin = function() {
-
-	async.waterfall([
-		
-		function(callback) {
-			output = {};
-			output.pinset = args.pinset;
-			callback(null,output);
-		},
-		utils.ifExistInDB,
-		function(input,exist,callback) {
-			if(exist) {
-				ipfs.pin.rm(input.pinset, { recursive: true },function(err,pinset){
-					if(!err) {
-						console.log("############# " + input.pinset + " removed from node");
-						callback(null,input);
-					}
-					else
-					{
-						if(err.message=="not pinned") {
-							callback(null,input);
-						}
-						else
-						{
-							console.log(input.pinset + " not removed");
-							console.log(err.message);
-							callback(true);
-						}
-	
-					}
-				});
-			}
-			else
-			{
-				callback(true);
-			}
-		},
-		utils.ifExistInDB,
-		function(input,exist,callback) {
-			if(exist) {
-				db.get("metadata_store", function(err,metadata_store) {
-					if(err) callback(true);
-					callback(null,metadata_store,input);
-				});
-			}
-			else
-			{
-				callback(true);
-			}
-		},
-		function(metadata_store,input,callback) {
-			metadata_store = metadata_store.filter(result => {return result.pinset!=input.pinset});
-			db.save("metadata_store", metadata_store, function(err){
-				callback(null)
-			});
-
-		},
-		function(callback) {
-			console.log("Running Garbage collector. Please wait..");
-			ipfs.repo.gc(function(err, res){
-				if(!err) {
-					console.log("Garbade collector done")
-				}
-				else {
-					console.log(err);
-				}
-			});
-		}
-	])
-}
-
-
-
-
-
-
