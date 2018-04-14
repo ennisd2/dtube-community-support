@@ -41,9 +41,6 @@ switch(args._args[0]) {
 	case "delete":
 		del.main();
 		break;
-	case "deleteAuthor":
-		del.deleteAuthor();
-		break;
 	case "show":
 		list.showPinset();
 		break;

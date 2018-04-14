@@ -24,14 +24,11 @@ function onlyUnique(value, index, self) {
 }
 
 filterByAuthor = function(author,metadata) {
-	authorSize = 0;
-	result = {};
-	metadata = metadata.filter(result => {return result.author==author});
+	metadataFilter = metadata.filter(result => {
+		return result.author==author
+	});
 
-	metadata.forEach(result => {authorSize+=result.size});
-	result.authorSize = authorSize;
-	result.metadata = metadata;
-	return result;
+	return metadataFilter;
 }
  
 filterByDate = function(date, metadata) {
@@ -90,78 +87,16 @@ remove = function(metadata) {
 
 }
 
-exports.deleteAuthor = function() {
-	async.waterfall([
-		function(callback) {
-			db.get("metadata_store", function(err, metadata){
-				if(args.author!=undefined) {
-					result = filterByAuthor(args.author, metadata);
-					if(result.metadata.length>0){
-						authorResultMetadata=result.metadata;
-						callback(null,authorResultMetadata);
-					}
-					else {
-						console.log(args.author + " not found in DB");
-						callback(true)
-					}
-				}
-				else {
-					console.log("Usage : npm run rmAuthor -- -a=myAuthor");
-					callback(true);
-				}
-			});
-		},
-		function(authorResultMetadata,callback) {
-			console.log("Deleting all content for : " + args.author);
-			async.forEachOf(authorResultMetadata,function(el,i,cb) {
-				ipfs.pin.rm(el.pinset, { recursive: true },function(err,pinset){
-					if(!err) console.log(pinset[0].hash + " removed");
-					cb();
-
-				});
-				//console.log(el.pinset)
-
-			}, function(err) {
-				callback(null,authorResultMetadata);
-			});
-		},
-		function(authorResultMetadata,callback){
-			db.get("metadata_store", function(err, metadata_store){
-				authorResultMetadata.forEach(result => {
-					metadata_store = metadata_store.filter(re => {return re.pinset!=result.pinset});
-				})
-				callback(null,metadata_store);
-			})
-		},
-		function(metadata_store,callback) {
-			db.save("metadata_store", metadata_store, function(err){
-				callback(null)
-			});
-		},
-		function(callback) {
-			console.log("Running Garbage collector. Please wait..");
-			ipfs.repo.gc(function(err, res){
-				if(!err) {
-					console.log("Garbade collector done")
-				}
-				else {
-					console.log(err);
-				}
-			});
-
-		}
-	]);
-}
 
 exports.main = function() {
 	if(args.date != undefined) {
 		date = new Date(args.date);
 		if(!isNaN(date.getTime()))
 		{
+
 			db.get("metadata_store", function(err, metadata){
 					result = filterByDate(date, metadata);
 					if(result.length>0){
-						//console.log(metadata)
 						remove(result);
 					}
 					else {
@@ -171,6 +106,19 @@ exports.main = function() {
 			});
 		}
 		else console.log("no valid date provided");
+	}
+	else if (args.author != undefined) {
+		db.get("metadata_store", function(err, metadata){
+			author = args.author;
+			result = filterByAuthor(author, metadata);
+			if(result.length>0){
+				remove(result);
+			}
+			else {
+				console.log(author + " not found in DB");
+			}
+		});
+
 	}
 };
 
