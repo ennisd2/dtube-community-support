@@ -38,8 +38,8 @@ switch(args._args[0]) {
 	case "addPin":
 		add.addPin()
 		break;
-	case "deletePin":
-		del.deletePin();
+	case "delete":
+		del.main();
 		break;
 	case "deleteAuthor":
 		del.deleteAuthor();
