@@ -11,5 +11,6 @@
     	"https://steemd.minnowsupportproject.org",
     	"https://steemd.privex.io"
 	],
-	"blacklist": []
+	"blacklist": [],
+	"whitelist": ["evildido-blog"]
 }

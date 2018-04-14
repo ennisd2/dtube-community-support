@@ -32,6 +32,7 @@ var dtube_app = config.dtube_app;
 // used to pin content of one  of tags configured in configu.json
 var tags = config.tags;
 var blacklist = config.blacklist;
+var whitelist = config.whitelist;
 
 // 'save' is used to prevent to pin when authors edit dtube publication multiple times while video is 'pin add' is running
 // hash is added before "pin add"
@@ -78,7 +79,7 @@ function streamOp()
 						if(json_metadata.app.includes(dtube_app))
 						{
 							//select tags AND not in blacklist 
-							if(json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}) && (blacklist.indexOf(result[1].author) === -1))
+							if((json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}) && (blacklist.indexOf(result[1].author) === -1)) || (whitelist.indexOf(result[1].author) >= 0) )
 							{
 								async.waterfall (
 								[
