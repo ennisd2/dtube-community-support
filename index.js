@@ -39,6 +39,10 @@ var whitelist = config.whitelist;
 // hash is deleted after "pin add"
 var save = [];
 
+// 'size_tmp' is used to check that the maximum size of the directory is not exceeded
+// "size_tmp" is the sum of all content content in the pinning process  
+var size_tmp = 0;
+
 // used to stop streamOp when api return bad content (in catch)
 var stream;
 
@@ -117,6 +121,33 @@ function streamOp()
 									},
 									ifAdding,
 									function(input,callback) {
+										ipfs.ls(input.pinset, function(err2,parts) {
+											try {
+											parts.forEach(function(part) {
+												// increment global size_tmp
+												size_tmp += part.size;
+											});
+											console.log("check size_tmp " + size_tmp);
+											ipfs.repo.stat((err,stats) => {
+												// don't pin if not enough free space (repoSize + content in pinning process)
+												if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
+													callback(null,input)
+												}
+												else
+												{
+													console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
+													callback(true)
+												}
+											});
+											}
+											catch(e) {
+												console.log(e)
+											}
+
+
+										});
+									},
+									function(input,callback) {
 										ipfs.pin.add(input.pinset, function(err1, pinset) {
 											//Pin ressource
 											size = 0;
@@ -149,7 +180,7 @@ function streamOp()
 											db.get("metadata_store", function(err, metadata_store){
 												if(err) metadata_store=[];
 												metadata_store.push(metadata);
-												callback(null,metadata_store,metadata.pinset);
+												callback(null,metadata_store,metadata);
 											});
 										}
 										else
@@ -157,11 +188,13 @@ function streamOp()
 											callback(true);
 										}
 									},
-									function(metadata_store, hash, callback){
+									function(metadata_store, metadata, callback){
 										db.save("metadata_store", metadata_store, function(err){
 											logger.info("############# " + hash + " metadata stored");
 											// delete entrie in temp 'save' var
-											save = save.filter(function(el){return el!==hash;});
+											save = save.filter(function(el){return el!==metadata.pinset;});
+											size_tmp = size_tmp-Number(metadata.size_tmp)
+											console.log("end " + size_tmp)
 										});
 									}
 								]);
