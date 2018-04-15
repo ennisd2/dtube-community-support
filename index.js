@@ -66,6 +66,7 @@ function streamOp()
 	stream = steem.api.streamOperations("irreversible",(err, result) => {
 		try 
 		{	
+
 			db = new Store("data");
 		
 			if(result[0]=='comment') 
@@ -78,7 +79,6 @@ function streamOp()
 					//verify if app is not undefined
 					if(json_metadata.app !='{}' && json_metadata.app!=""  && json_metadata.app != undefined)
 					{
-
 						//select dtube publication
 						if(json_metadata.app.includes(dtube_app))
 						{
@@ -94,6 +94,7 @@ function streamOp()
 											var hash = json_metadata.video.content.video480hash;
 										}
 										else
+
 										{
 											// if 480p not available
 											var hash = json_metadata.video.content.videohash;
@@ -121,6 +122,7 @@ function streamOp()
 									},
 									ifAdding,
 									function(input,callback) {
+
 										ipfs.ls(input.pinset, function(err2,parts) {
 											try {
 											parts.forEach(function(part) {
@@ -195,6 +197,7 @@ function streamOp()
 											save = save.filter(function(el){return el!==metadata.pinset;});
 											size_tmp = size_tmp-Number(metadata.size_tmp)
 											console.log("end " + size_tmp)
+
 										});
 									}
 								]);
