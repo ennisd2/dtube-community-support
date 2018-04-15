@@ -12,5 +12,5 @@
     	"https://steemd.privex.io"
 	],
 	"blacklist": [],
-	"whitelist": ["evildido-blog"]
+	"whitelist": []
 }
