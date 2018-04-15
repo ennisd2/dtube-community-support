@@ -26,7 +26,11 @@ Clone the repo
 In default configuration, DCS will check for francophone videos. You can change that by modifying "tags" in config.js file.
 "tags" is an array, you can add many tags in order to support multiple communities.
 
-"blacklist" is an array allowing not storing the contents.
+"blacklist" (array) : Don't pin authors's contents even if he is using "tag".
+
+"whitelist" (array): Pin author's content even if he is not using "tag"
+
+Whitelist array has the precedence over blacklist.
 
 
 
@@ -70,7 +74,9 @@ This command takes one argument
 > npm run rm --
 
 This command takes one argument
-* -p=pinset : Delete the following pinset (eg: npm run rm -- -p=QmSe462BD2S3EFhgwotGtjS86LJhzzsqqPUmR8j2vbHY4W)
+* -p=pinset : unpin the following pinset (eg: npm run rm -- -p=QmSe462BD2S3EFhgwotGtjS86LJhzzsqqPUmR8j2vbHY4W)
+* -a=author : unpin all content author's content (eg: npm run rm -- -a=evildido)
+* -d=date : unpin all content befote the date (eg: npn run rm -- -d="03/18/2018" **OR** "03/18/2018" or any valid date - please check Date javascript object)
 
 
 
