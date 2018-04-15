@@ -24,7 +24,15 @@ If you want to run docker with another user than root, add your username into th
 
 > cd ./dtube-community-support
 
-Edit the config.json file and customize your tags and RPC (optional)
+Edit the config.json file and customize the following items if needed :
+* tags (array) : steem tags is used to pin content (#fr by default)
+* rpc node (array) : full node
+* blacklist (array) : Don't pin authors's contents even if he is using "tag".
+* whitelist (array): Pin author's content even if he is not using "tag"
+
+Whitelist array has the precedence over blacklist.
+
+
 
 - Build and test: `docker-compose up` (CTRL + C to exit)
 Go have a coffee while it builds
@@ -41,10 +49,13 @@ Once inside, execute the IPFS bandwidth stat command: `ipfs stats bw`
 You can do the same thing with any command inside the dcs container:
 > docker exec -ti dcs bash
 
+
+
 Then, to list the videos being cached: `npm run list`
 #### Using docker-compose
 To execute the IPFS bandwidth stat command:
 > docker-compose exec ipfs ipfs stats bw
+
 
 To list video cached by DCS: 
 > docker-compose exec dcs npm run list
@@ -69,8 +80,14 @@ Install : https://ipfs.io/docs/install/
 > npm install
 
 ### Configuration
-In default configuration, DCS will check for francophone videos. You can change that by modifying "tags" in config.js file.
-"tags" is an array, you can add many tags in order to support multiple communities.
+
+Edit the config.json file and customize the following items if needed :
+* tags (array) : steem tags is used to pin content (#fr by default)
+* rpc node (array) : full node
+* blacklist (array) : Don't pin authors's contents even if he is using "tag".
+* whitelist (array): Pin author's content even if he is not using "tag"
+
+Whitelist array has the precedence over blacklist.
 
 ### Start the collector
 This command will start the collector. it will detect new dtube content and add it on the ipfs node.
@@ -105,4 +122,10 @@ This command takes one argument
 > npm run rm --
 
 This command takes one argument
-* -p=pinset : Delete the following pinset (eg: npm run rm -- -p=QmSe462BD2S3EFhgwotGtjS86LJhzzsqqPUmR8j2vbHY4W)
+
+* -p=pinset : unpin the following pinset (eg: npm run rm -- -p=QmSe462BD2S3EFhgwotGtjS86LJhzzsqqPUmR8j2vbHY4W)
+* -a=author : unpin all content author's content (eg: npm run rm -- -a=evildido)
+* -d=date : unpin all content befote the date (eg: npn run rm -- -d="03/18/2018" **OR** "03/18/2018" or any valid date - please check Date javascript object)
+
+
+

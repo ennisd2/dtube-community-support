@@ -14,69 +14,71 @@ let args = require('parse-cli-arguments')({
     options: {
 
         pinset: { alias: 'p' },
+        author: { alias: 'a'},
+        date: { alias: 'd'}
     }
 });
 
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
+}
 
+filterByAuthor = function(author,metadata) {
+	metadataFilter = metadata.filter(result => {
+		return result.author==author
+	});
 
+	return metadataFilter;
+}
+ 
+filterByDate = function(date, metadata) {
+	metadataFilter = metadata.filter(result => {
+		 return new Date(result.date) < date;
+	});
 
+	return metadataFilter;
 
-exports.deletePin = function() {
+}
+
+filterByPinset = function(pinset, metadata) {
+	metadataFilter = metadata.filter(result => {
+		 return result.pinset==pinset
+	});
+
+	return metadataFilter;
+
+}
+
+remove = function(metadata) {
 
 	async.waterfall([
-		
 		function(callback) {
-			output = {};
-			output.pinset = args.pinset;
-			callback(null,output);
-		},
-		utils.ifExistInDB,
-		function(input,exist,callback) {
-			if(exist) {
-				ipfs.pin.rm(input.pinset, { recursive: true },function(err,pinset){
-					if(!err) {
-						console.log("############# " + input.pinset + " removed from node");
-						callback(null,input);
-					}
-					else
-					{
-						if(err.message=="not pinned") {
-							callback(null,input);
-						}
-						else
-						{
-							console.log(input.pinset + " not removed");
-							console.log(err.message);
-							callback(true);
-						}
+
+			async.forEachOf(metadata,function(el,i,cb) {
+				ipfs.pin.rm(el.pinset, { recursive: true },function(err,pinset){
+					if(!err) console.log(pinset[0].hash + " removed");
+					cb();
+
+				});
+			}, function(err) {
+				callback(null,metadata);
+			});
+
 	
-					}
-				});
-			}
-			else
-			{
-				callback(true);
-			}
+
 		},
-		utils.ifExistInDB,
-		function(input,exist,callback) {
-			if(exist) {
-				db.get("metadata_store", function(err,metadata_store) {
-					if(err) callback(true);
-					callback(null,metadata_store,input);
-				});
-			}
-			else
-			{
-				callback(true);
-			}
+		function(metadata,callback){
+			db.get("metadata_store", function(err, metadata_store){
+				metadata.forEach(result => {
+					metadata_store = metadata_store.filter(re => {return re.pinset!=result.pinset});
+				})
+				callback(null,metadata_store);
+			})
 		},
-		function(metadata_store,input,callback) {
-			metadata_store = metadata_store.filter(result => {return result.pinset!=input.pinset});
+		function(metadata_store,callback) {
 			db.save("metadata_store", metadata_store, function(err){
 				callback(null)
 			});
-
 		},
 		function(callback) {
 			console.log("Running Garbage collector. Please wait..");
@@ -88,11 +90,57 @@ exports.deletePin = function() {
 					console.log(err);
 				}
 			});
+
 		}
-	])
+	]);
+
 }
 
 
+exports.main = function() {
+	if(args.pinset != undefined) {
+		db.get("metadata_store", function(err, metadata){
+			pinset = args.pinset;
+			result = filterByPinset(pinset, metadata);
+			if(result.length>0){
+				remove(result);
+			}
+			else {
+				console.log(pinset + " not found in DB");
+			}
 
+		});
 
+	}
+	else if(args.date != undefined) {
+		date = new Date(args.date);
+		if(!isNaN(date.getTime()))
+		{
 
+			db.get("metadata_store", function(err, metadata){
+					result = filterByDate(date, metadata);
+					if(result.length>0){
+						remove(result);
+					}
+					else {
+						console.log("no entrie found in DB before : " + date);
+					}
+
+			});
+		}
+		else console.log("no valid date provided");
+	}
+	else if (args.author != undefined) {
+		db.get("metadata_store", function(err, metadata){
+			author = args.author;
+			result = filterByAuthor(author, metadata);
+			if(result.length>0){
+				remove(result);
+			}
+			else {
+				console.log(author + " not found in DB");
+			}
+		});
+
+	}
+};

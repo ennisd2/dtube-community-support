@@ -44,14 +44,15 @@ exports.ifExistInDB = function(input,callback) {
   db.get("metadata_store", function(err, metadata_store){
     if(!err)
     {
-      
+   
       if(metadata_store.some(function(r){return r.pinset===input.pinset})) {
-        logger.info(input.pinset + " already stored")
+        logger.info(input.pinset + " exist in DB")
+
         exist=true;
       }
       else
       {
-        logger.info(input.pinset + " not already stored");
+        logger.info(input.pinset + " not exist in DB");
         exist=false;
       }
     }
@@ -64,5 +65,3 @@ exports.ifExistInDB = function(input,callback) {
     callback(null,input,exist);
   });
 }
-
-
