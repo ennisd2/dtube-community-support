@@ -3,13 +3,12 @@
 	"dtube_app": "dtube",
 	"rpc_nodes": [
 		"https://api.steemit.com",
-		"https://gtg.steem.house:8090",
-		"https://steemd.steemgigs.org",
+		"https://api.steem.house",
 		"https://rpc.steemviz.com",	
-		"https://rpc.buildteam.io",	
 		"https://seed.bitcoiner.me",
     	"https://steemd.minnowsupportproject.org",
-    	"https://steemd.privex.io"
+    	"https://steemd.privex.io",
+    	"https://steemd.pevo.science"
 	],
 	"blacklist": [],
 	"whitelist": []
