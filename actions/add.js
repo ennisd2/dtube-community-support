@@ -82,41 +82,62 @@ exports.addPin = function () {
 			})
 		},
 		utils.ifExistInDB,
-
 		function(metadata,exist,callback) {
-			if(!exist)
-			{
-				console.log("Pinning the content, please wait...");
-				ipfs.pin.add(metadata.pinset, function(err1, pinset) {
-					try
-					{
-						var size = 0;
-						ipfs.ls(metadata.pinset, function(err2,parts) {
-							parts.forEach(function(part) {
-								size += part.size;
-							});
-							metadata.size = size;
-							console.log("############# " + metadata.pinset + " added to node");
-							console.log("Author : " + metadata.author);
-							console.log("Title : " + metadata.title);
-							console.log("Permlink : " + metadata.permlink);
-							console.log("Link : " + metadata.link);
-							console.log("Size : " + metadata.size);
-							console.log("Date : " + metadata.date);
-							callback(null, metadata);
-						});
-					}
-					catch(error) {
-						console.log(error.name);
-						console.log(error.message)
-						callback(true);
-					}
+			if(!exist) {
+				var size = 0;
+				ipfs.ls(metadata.pinset, function(err,parts) {
+					parts.forEach(function(part) {
+						size += part.size;
+	
+					});
+					ipfs.repo.stat((err,stats) => {
+						if(stats.storageMax > Number(stats.repoSize) + size) {
+							callback(null,metadata)
+						}
+						else
+						{
+							console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
+							callback(true)
+						}
+					});
+					
 				});
 			}
 			else
 			{
+				console.log(metadata.pinset + " already exist in db. skip it")
 				callback(true);
 			}
+		},
+		function(metadata,callback) {
+
+			console.log("Pinning the content, please wait...");
+			ipfs.pin.add(metadata.pinset, function(err1, pinset) {
+				try
+				{
+					var size = 0;
+					ipfs.ls(metadata.pinset, function(err2,parts) {
+						parts.forEach(function(part) {
+							size += part.size;
+						});
+						metadata.size = size;
+						console.log("############# " + metadata.pinset + " added to node");
+						console.log("Author : " + metadata.author);
+						console.log("Title : " + metadata.title);
+						console.log("Permlink : " + metadata.permlink);
+						console.log("Link : " + metadata.link);
+						console.log("Size : " + metadata.size);
+						console.log("Date : " + metadata.date);
+						callback(null, metadata);
+					});
+				}
+				catch(error) {
+					console.log(error.name);
+					console.log(error.message)
+					callback(true);
+				}
+			});
+
 
 		},
 		utils.ifExistInDB,
