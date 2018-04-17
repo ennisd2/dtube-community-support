@@ -57,7 +57,6 @@ exports.listByAuthor = function (){
 				arrayAuthor.forEach(function(author) {
 
 					tmp = filterByAuthor(author,metadata);
-					console.log('tmp',tmp)
 					authorResult = {};
 					authorResult.author = author;
 					authorResult.authorSize = tmp.authorSize;
