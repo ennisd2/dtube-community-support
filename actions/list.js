@@ -24,11 +24,10 @@ function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
 }
 
-filterByAuthor = function(author,metadata) {
+function filterByAuthor(author,metadata) {
 	authorSize = 0;
 	result = {};
 	metadata = metadata.filter(result => {return result.author==author});
-
 	metadata.forEach(result => {authorSize+=result.size});
 	result.authorSize = authorSize;
 	result.metadata = metadata;
@@ -58,6 +57,7 @@ exports.listByAuthor = function (){
 				arrayAuthor.forEach(function(author) {
 
 					tmp = filterByAuthor(author,metadata);
+					console.log('tmp',tmp)
 					authorResult = {};
 					authorResult.author = author;
 					authorResult.authorSize = tmp.authorSize;
@@ -69,7 +69,6 @@ exports.listByAuthor = function (){
 				});
 
 				listAuthor.forEach((result)=>{
-
 					console.log(result.author + " : " + Number(result.authorSize/1000000).toFixed(2) + "Mo")
 				});
 				
