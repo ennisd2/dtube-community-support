@@ -129,7 +129,7 @@ function streamOp()
 												// increment global size_tmp
 												size_tmp += part.size;
 											});
-											console.log("check size_tmp " + size_tmp);
+
 											ipfs.repo.stat((err,stats) => {
 												// don't pin if not enough free space (repoSize + content in pinning process)
 												if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
