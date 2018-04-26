@@ -10,4 +10,4 @@ RUN sed -i 's/localhost/ipfs/' actions/*.js
 
 RUN chown node: * -R
 
-RUN npm install
+RUN yarn install

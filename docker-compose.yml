@@ -22,7 +22,7 @@ services:
       - ./data:/opt/dcs/data
       - ./log:/opt/dcs/log
     working_dir: /opt/dcs
-    command: npm start
+    command: yarn run start
     links:
       - ipfs
     depends_on:
