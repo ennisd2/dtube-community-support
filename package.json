@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "help": "npm-run-help",
-    "start": "node index1.js",
+    "start": "node index.js",
     "list": "node app.js list",
     "listAuthor": "node app.js listAuthor",
     "add": "node app.js addPin",
