@@ -37,6 +37,7 @@ var logger = new (winston.Logger)({
 
 
 lightrpc.sendAsync('get_dynamic_global_properties', []).then(result => {
+  logger.info("Start Dtube Community Support at block : " + result.head_block_number);
   utils.catchup(result.head_block_number);
 });
 
