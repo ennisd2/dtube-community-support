@@ -61,14 +61,12 @@ exports.ifExistInDB = function(input,callback) {
     {
    
       if(metadata_store.some(function(r){return r.pinset===input.pinset})) {
-        console.log(input.pinset + " exist in DB")
         logger.info(input.pinset + " exist in DB")
 
         exist=true;
       }
       else
       {
-        console.log(input.pinset + " not exist in DB")
         logger.info(input.pinset + " not exist in DB");
         exist=false;
       }
@@ -88,12 +86,14 @@ function catchup(blockNumber) {
   
   lightrpc.sendAsync('get_ops_in_block', [blockNumber, false]).then(ops => {
     if (!ops.length) {
+
       //console.error('Block does not exist?');
       lightrpc.sendAsync('get_block', [blockNumber]).then(block => {
         if (block && block.transactions.length === 0) {
-          console.log('Block exist and is empty, load next', blockNumber);
+          //console.log('Block exist and is empty, load next', blockNumber);
           return catchup(blockNumber + 1);
         } else {
+          //block does not exist
           //console.log('Retry', blockNumber);
           bluebird.delay(5000).then(function() {
             return catchup(blockNumber);
@@ -112,6 +112,7 @@ function catchup(blockNumber) {
     }
   }).catch(err => {
     console.error('Call failed with lightrpc', err);
+    // try another node
     failover();
     //console.log('Retry', blockNumber);
     bluebird.delay(5000).then(function() {
