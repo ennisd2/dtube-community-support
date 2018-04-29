@@ -2,14 +2,23 @@
 	"tags": ["fr"],
 	"dtube_app": "dtube",
 	"rpc_nodes": [
+		"https://rpc.steemviz.com",
 		"https://api.steemit.com",
 		"https://api.steem.house",
-		"https://rpc.steemviz.com",	
-		"https://seed.bitcoiner.me",
-    	"https://steemd.minnowsupportproject.org",
-    	"https://steemd.privex.io",
-    	"https://steemd.pevo.science"
+		"https://rpc.curiesteem.com",
+		"https://steemd.privex.io",
+		"https://api.steem.house",
+		"https://gtg.steem.house:8090"
 	],
 	"blacklist": [],
 	"whitelist": []
 }
+
+
+		
+        
+        
+        
+        
+        
+        
