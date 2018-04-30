@@ -68,7 +68,7 @@ function start() {
         utils.catchup(result.head_block_number);
       }).catch(err => {
         // retry with another node
-       console.error('Call failed with lightrpc', err);
+       logger.error('Call failed with lightrpc : ', err.message);
        failover();
        bluebird.delay(5000).then(function() {
          return start();

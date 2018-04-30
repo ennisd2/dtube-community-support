@@ -133,7 +133,7 @@ function catchup(blockNumber) {
       return catchup(blockNumber + 1);
     }
   }).catch(err => {
-    console.error('Call failed with lightrpc', err);
+    logger.error('Call failed with lightrpc : ', err.message);
     // try another node
     failover();
     //console.log('Retry', blockNumber);
