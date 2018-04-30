@@ -93,11 +93,7 @@ function failover() {
     
     lightrpc = createClient(rpc_node);
     bluebird.promisifyAll(lightrpc);
-    logger.warn('');
-    logger.warn('***********************************************');
     logger.warn('Failing over to: ' + rpc_node);
-    logger.warn('***********************************************');
-    logger.warn('');
   }
 }
 
