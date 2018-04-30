@@ -52,7 +52,6 @@ function streamOps(ops) {
 		var result = {};
 		result = op.op;
 		db = new Store("./data");
-		
 		if(result[0]=='comment') 
 		{
 			//verify if no a response and if json_metadata is not empty
