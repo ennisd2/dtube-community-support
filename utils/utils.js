@@ -3,6 +3,8 @@ var config = require('config.json')('./config.json');
 var Store = require("jfs");
 const { createClient } = require('lightrpc');
 const bluebird = require('bluebird');
+var Store = require("jfs");
+var db = new Store("./data");
 
 
 var winston = require('winston');
@@ -29,6 +31,13 @@ var cur_node_index = 0;
 var lightrpc = createClient(config.rpc_nodes[cur_node_index]);
 bluebird.promisifyAll(lightrpc);
 
+// those var are used to print 'block' logs each X minutes 
+var block_processed = 0;
+var block_per_minute = 20;
+// print each hours
+var log_block_each_time = block_per_minute * 3600;
+// save block state each minutes
+var save_block_each_time = block_per_minute * 1;
 
 function failover() {
   // failover function
@@ -83,14 +92,23 @@ exports.ifExistInDB = function(input,callback) {
 
 function catchup(blockNumber) {
   
-  
+
   lightrpc.sendAsync('get_ops_in_block', [blockNumber, false]).then(ops => {
     if (!ops.length) {
 
       //console.error('Block does not exist?');
       lightrpc.sendAsync('get_block', [blockNumber]).then(block => {
         if (block && block.transactions.length === 0) {
+          // save block number in JFS DB
+          if(block_processed % save_block_each_time == 0) {
+            saveBlockState(blockNumber);
+          }
           //console.log('Block exist and is empty, load next', blockNumber);
+          if(block_processed % log_block_each_time == 0) {
+            logger.info('At block : ',blockNumber, ' timestamp ',block.timestamp)
+          }
+
+          block_processed +=1;
           return catchup(blockNumber + 1);
         } else {
           //block does not exist
@@ -107,7 +125,15 @@ function catchup(blockNumber) {
       });
     } else {
       //console.log('Block loaded', blockNumber);
-      stream.streamOps(ops);
+      // save block number in JFS DB
+      if(block_processed % save_block_each_time == 0) {
+        saveBlockState(blockNumber);
+      }
+      if(block_processed % log_block_each_time == 0) {
+        logger.info('At block : ',blockNumber, ' timestamp ',ops[0].timestamp)
+      }
+      block_processed +=1;
+
       return catchup(blockNumber + 1);
     }
   }).catch(err => {
@@ -124,4 +150,8 @@ function catchup(blockNumber) {
 
 exports.catchup = catchup;
 
+function saveBlockState(blockNumber) {
+  state = {blockNumber: blockNumber}
+  db.save("block_state", state);
+}
 
