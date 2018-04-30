@@ -35,7 +35,7 @@ bluebird.promisifyAll(lightrpc);
 var block_processed = 0;
 var block_per_minute = 20;
 // print each hours
-var log_block_each_time = block_per_minute * 3600;
+var log_block_each_time = block_per_minute * 60;
 // save block state each minutes
 var save_block_each_time = block_per_minute * 1;
 
