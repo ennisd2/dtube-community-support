@@ -136,6 +136,7 @@ function catchup(blockNumber) {
     }
   }).catch(err => {
     logger.error('Call failed with lightrpc : ', err.message);
+    
     // try another node
     failover();
     //console.log('Retry', blockNumber);

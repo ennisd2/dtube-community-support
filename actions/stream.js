@@ -54,134 +54,148 @@ function streamOps(ops) {
 		db = new Store("./data");
 		if(result[0]=='comment') 
 		{
+			
 			//verify if no a response and if json_metadata is not empty
-			if(result[1].parent_author == "" && result[1].json_metadata!='{}' && result[1].json_metadata!="")
+			//if(result[1].parent_author == "" && result[1].json_metadata!='{}' && result[1].json_metadata!="" && result[1].json_metadata!='null')
+			//{}
+			if(result[1].parent_author === "" && result[1].json_metadata != "{}")
 			{
-				json_metadata = JSON.parse(result[1].json_metadata);
-
-				//verify if app is not undefined and not an object (dtube app is defined as a string)
-				if(json_metadata.app !='{}' && json_metadata.app!=""  && json_metadata.app != undefined && !isObject(json_metadata.app))
+				try
 				{
+					// test if json_metadata can be parsed 
+					json_metadata = JSON.parse(result[1].json_metadata);
+					// test if json_metadata is an object
+      				if(!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
+					//verify if app is not undefined and not an object (dtube app is defined as a string)
 
-					//select dtube publication
-					if(json_metadata.app.includes(dtube_app))
+					// Check app is not empty and not an object
+					if(json_metadata.app !='{}' && json_metadata.app!=""  && json_metadata.app != undefined && !isObject(json_metadata.app))
 					{
-						
-						//select tags AND not in blacklist 
-						if((json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}) && (blacklist.indexOf(result[1].author) === -1)) || (whitelist.indexOf(result[1].author) >= 0) )
+	
+						//select dtube publication
+						if(json_metadata.app.includes(dtube_app))
 						{
-							async.waterfall (
-							[
-								function(callback) 
-								{
-									//collect videhash inside metadata
-									if(json_metadata.video.content.video480hash!=undefined) {
-										var hash = json_metadata.video.content.video480hash;
-									}
-									else
+	
+							//select tags AND not in blacklist 
+							if((json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}) && (blacklist.indexOf(result[1].author) === -1)) || (whitelist.indexOf(result[1].author) >= 0) )
+							{
+								async.waterfall (
+								[
+									function(callback) 
 									{
-										// if 480p not available
-										var hash = json_metadata.video.content.videohash;
-									}
-									logger.info("############# " + hash + " detected")
-									output = {};
-									output.pinset=hash;
-									callback(null,output)
-								},
-								utils.ifExistInDB,
-								function(input,exist,callback) {
-									if(!exist)
-									{
-										// Do no try to pin video if already in DB
-										logger.info(input.pinset + " not in DB.")
-										callback(null,input);
-									}
-									else
-									{
-										logger.info(input.pinset + " already exist. skip it")
-										// delete entrie in temp 'save' var
-										save = save.filter(function(el){return el!==input.pinset;});
-										callback(true);
-									}
-								},
-								ifAdding,
-								function(input,callback) {
-									ipfs.ls(input.pinset, function(err2,parts) {
-										try {
-										parts.forEach(function(part) {
-											// increment global size_tmp
-											size_tmp += part.size;
-										});
-										ipfs.repo.stat((err,stats) => {
-											// don't pin if not enough free space (repoSize + content in pinning process)
-											if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
-												callback(null,input)
-											}
-											else
-											{
-												console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
-												callback(true)
-											}
-										});
+										//collect videhash inside metadata
+										if(json_metadata.video.content.video480hash!=undefined) {
+											var hash = json_metadata.video.content.video480hash;
 										}
-										catch(e) {
-											console.log(e)
+										else
+										{
+											// if 480p not available
+											var hash = json_metadata.video.content.videohash;
 										}
-									});
-								},
-								function(input,callback) {
-									ipfs.pin.add(input.pinset, function(err1, pinset) {
-										//Pin ressource
-										size = 0;
+										logger.info("############# " + hash + " detected")
+										output = {};
+										output.pinset=hash;
+										callback(null,output)
+									},
+									utils.ifExistInDB,
+									function(input,exist,callback) {
+										if(!exist)
+										{
+											// Do no try to pin video if already in DB
+											logger.info(input.pinset + " not in DB.")
+											callback(null,input);
+										}
+										else
+										{
+											logger.info(input.pinset + " already exist. skip it")
+											// delete entrie in temp 'save' var
+											save = save.filter(function(el){return el!==input.pinset;});
+											callback(true);
+										}
+									},
+									ifAdding,
+									function(input,callback) {
 										ipfs.ls(input.pinset, function(err2,parts) {
+											try {
 											parts.forEach(function(part) {
-												size += part.size;
+												// increment global size_tmp
+												size_tmp += part.size;
 											});
-											logger.info("############# " + input.pinset + " added to node");
-											logger.info("Author : " + result[1].author);
-											logger.info("Title : " + result[1].title);
-											logger.info("Permlink : " + result[1].permlink);
-											logger.info("Link : " + "/#!/v/" + result[1].author + "/" + result[1].permlink);
-											logger.info("Size : " + size);
-											logger.info("Date : " + Date());
-											metadata = {};
-											metadata.pinset = input.pinset;
-											metadata.author = result[1].author;
-											metadata.title = result[1].title;
-											metadata.permlink = result[1].parent_permlink;
-											metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
-											metadata.size = size;
-											metadata.date = Date();
-											callback(null, metadata);
+											ipfs.repo.stat((err,stats) => {
+												// don't pin if not enough free space (repoSize + content in pinning process)
+												if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
+													callback(null,input)
+												}
+												else
+												{
+													console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
+													callback(true)
+												}
+											});
+											}
+											catch(e) {
+												console.log(e)
+											}
 										});
-									});
-								},
-								utils.ifExistInDB,
-								function(metadata,exist,callback) {
-									if(!exist) {
-										db.get("metadata_store", function(err, metadata_store){
-											if(err) metadata_store=[];
-											metadata_store.push(metadata);
-											callback(null,metadata_store,metadata);
+									},
+									function(input,callback) {
+										ipfs.pin.add(input.pinset, function(err1, pinset) {
+											//Pin ressource
+											size = 0;
+											ipfs.ls(input.pinset, function(err2,parts) {
+												parts.forEach(function(part) {
+													size += part.size;
+												});
+												logger.info("############# " + input.pinset + " added to node");
+												logger.info("Author : " + result[1].author);
+												logger.info("Title : " + result[1].title);
+												logger.info("Permlink : " + result[1].permlink);
+												logger.info("Link : " + "/#!/v/" + result[1].author + "/" + result[1].permlink);
+												logger.info("Size : " + size);
+												logger.info("Date : " + Date());
+												metadata = {};
+												metadata.pinset = input.pinset;
+												metadata.author = result[1].author;
+												metadata.title = result[1].title;
+												metadata.permlink = result[1].parent_permlink;
+												metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
+												metadata.size = size;
+												metadata.date = Date();
+												callback(null, metadata);
+											});
+										});
+									},
+									utils.ifExistInDB,
+									function(metadata,exist,callback) {
+										if(!exist) {
+											db.get("metadata_store", function(err, metadata_store){
+												if(err) metadata_store=[];
+												metadata_store.push(metadata);
+												callback(null,metadata_store,metadata);
+											});
+										}
+										else
+										{
+											callback(true);
+										}
+									},
+									function(metadata_store, metadata, callback){
+										db.save("metadata_store", metadata_store, function(err){
+											logger.info("############# " + metadata.pinset + " metadata stored");
+											// delete entrie in temp 'save' var
+											save = save.filter(function(el){return el!==metadata.pinset;});
+											size_tmp = size_tmp-Number(metadata.size_tmp)
 										});
 									}
-									else
-									{
-										callback(true);
-									}
-								},
-								function(metadata_store, metadata, callback){
-									db.save("metadata_store", metadata_store, function(err){
-										logger.info("############# " + metadata.pinset + " metadata stored");
-										// delete entrie in temp 'save' var
-										save = save.filter(function(el){return el!==metadata.pinset;});
-										size_tmp = size_tmp-Number(metadata.size_tmp)
-									});
-								}
-							]);
+								]);
+							}
 						}
 					}
 				}
+				catch(err) {
+					logger.debug(err.message)
+				}
+
 			}
 		}
 		
