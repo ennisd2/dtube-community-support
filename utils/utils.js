@@ -13,7 +13,7 @@ require('winston-daily-rotate-file');
 var transport = new (winston.transports.DailyRotateFile)({
     filename: 'log/application-%DATE%.log',
     datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
+    zippedArchive: false,
     maxSize: '20m',
     maxFiles: '14d'
   });
