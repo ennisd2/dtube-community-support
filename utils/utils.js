@@ -129,6 +129,8 @@ function catchup(blockNumber) {
         logger.info('At block : ',blockNumber, ' timestamp ',ops[0].timestamp)
       }
       block_processed +=1;
+      // Process the block and search dtube cotent
+      stream.streamOps(ops);
 
       return catchup(blockNumber + 1);
     }

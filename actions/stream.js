@@ -66,6 +66,7 @@ function streamOps(ops) {
 					//select dtube publication
 					if(json_metadata.app.includes(dtube_app))
 					{
+						
 						//select tags AND not in blacklist 
 						if((json_metadata.tags.some(function(r){return tags.indexOf(r) >=0}) && (blacklist.indexOf(result[1].author) === -1)) || (whitelist.indexOf(result[1].author) >= 0) )
 						{
