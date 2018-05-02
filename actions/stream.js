@@ -117,23 +117,37 @@ function streamOps(ops) {
 									function(input,callback) {
 										ipfs.ls(input.pinset, function(err2,parts) {
 											try {
+											var content size = 0;
+											// check if enought space in repo before pinning it
 											parts.forEach(function(part) {
 												// increment global size_tmp
-												size_tmp += part.size;
+												content_size += part.size;
 											});
+											// add content size to content processed
+											size_tmp+=content_size;
 											ipfs.repo.stat((err,stats) => {
+												logger.info("repo size : " + Number(stats.repoSize));
+												logger.info("size tmp : "+size_tmp)
+												logger.info("content size :"+content_size)
 												// don't pin if not enough free space (repoSize + content in pinning process)
 												if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
 													callback(null,input)
 												}
 												else
 												{
-													console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
+													// content not pinned, substract content size
+													size_tmp-=content_size;
+													logger.info("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
+													logger.info("repo size : " + Number(stats.repoSize));
+													logger.info("new size tmp : "+size_tmp)
+													// content not pinned, substract content size
+													size_tmp-=content_size;
 													callback(true)
 												}
 											});
 											}
 											catch(e) {
+												save = save.filter(function(el){return el!==input.pinset;});
 												console.log(e)
 											}
 										});
@@ -176,6 +190,9 @@ function streamOps(ops) {
 										}
 										else
 										{
+											save = save.filter(function(el){return el!==metadata.pinset;});
+											// content not pinned, substract content size
+											size_tmp-=content_size;
 											callback(true);
 										}
 									},
