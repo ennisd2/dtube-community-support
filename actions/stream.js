@@ -117,7 +117,7 @@ function streamOps(ops) {
 									function(input,callback) {
 										ipfs.ls(input.pinset, function(err2,parts) {
 											try {
-											var content size = 0;
+											var content_size = 0;
 											// check if enought space in repo before pinning it
 											parts.forEach(function(part) {
 												// increment global size_tmp
