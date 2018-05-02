@@ -201,7 +201,7 @@ function streamOps(ops) {
 											logger.info("############# " + metadata.pinset + " metadata stored");
 											// delete entrie in temp 'save' var
 											save = save.filter(function(el){return el!==metadata.pinset;});
-											size_tmp = size_tmp-Number(metadata.size_tmp)
+											size_tmp = size_tmp-Number(metadata.size)
 										});
 									}
 								]);
