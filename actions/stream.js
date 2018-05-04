@@ -153,6 +153,13 @@ function streamOps(ops) {
 										});
 									},
 									function(input,callback) {
+										steem.api.getContent(result[1].author,result[1].permlink, function(err, content) {
+											//get 'created' data (not given in block)
+											input.created = new Date(content.created);
+											callback(null,input);
+										});
+									},
+									function(input,callback) {
 										ipfs.pin.add(input.pinset, function(err1, pinset) {
 											//Pin ressource
 											size = 0;
@@ -166,15 +173,16 @@ function streamOps(ops) {
 												logger.info("Permlink : " + result[1].permlink);
 												logger.info("Link : " + "/#!/v/" + result[1].author + "/" + result[1].permlink);
 												logger.info("Size : " + size);
-												logger.info("Date : " + Date());
+												logger.info("Date : " + input.created);
 												metadata = {};
 												metadata.pinset = input.pinset;
 												metadata.author = result[1].author;
 												metadata.title = result[1].title;
-												metadata.permlink = result[1].parent_permlink;
+												metadata.permlink=result[1].permlink;
+												metadata.parent_permlink = result[1].parent_permlink;
 												metadata.link = "/#!/v/" + result[1].author + "/" + result[1].permlink;
 												metadata.size = size;
-												metadata.date = Date();
+												metadata.date = input.created;
 												callback(null, metadata);
 											});
 										});
@@ -218,6 +226,7 @@ function streamOps(ops) {
 		
 	});
 };
+
 
 function ifAdding(input,callback) {
 	// check if pinset is in 'save'
