@@ -93,6 +93,11 @@ Whitelist array has the precedence over blacklist.
 This command will start the collector. it will detect new dtube content and add it on the ipfs node.
 > npm start
 
+Collector can started at a specific block number by using -b argument
+> npm start -- -b=22021297
+
+data/block_state.json store the last block number processed by the bot. When exist and if no 'block number' argument provided, the collector start from block number stored in the 'block_state.json'
+
 ## Other commands
 
 #### List all stored content
@@ -103,7 +108,7 @@ This command takes the following arguments :
 * -s=size : Sort by size
 * -a=author : Display all content posted by the specified "author" (eg: npm run list -- -a=evildido)
 
-#### Return all authors
+#### Return all authors 
 > npm run listAuthor
 
 #### Display specific content

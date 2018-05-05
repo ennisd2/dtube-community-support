@@ -1,6 +1,6 @@
 {
   "name": "dtube-community-support",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "",
   "scripts": {
     "help": "npm-run-help",
@@ -16,12 +16,14 @@
   "license": "MIT",
   "dependencies": {
     "async": "^2.6.0",
+    "bluebird": "^3.5.1",
     "columnify": "^1.5.4",
     "config.json": "0.0.4",
     "help": "^3.0.2",
     "ipfs": "^0.28.0",
     "ipfs-api": "^18.1.1",
     "jfs": "^0.3.0",
+    "lightrpc": "0.0.5",
     "parse-cli-arguments": "^1.0.1",
     "steem": "^0.7.1",
     "steemjs": "^1.0.4",
