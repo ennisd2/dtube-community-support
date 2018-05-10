@@ -63,7 +63,7 @@ exports.addPin = function () {
 						if(result.json_metadata!='{}' && result.json_metadata!="") {
 							var metadata = {};
 							json_metadata = JSON.parse(result.json_metadata);
-							if(json_metadata.video.content.video480hash!=undefined) {
+							if(json_metadata.video.content.video480hash!=undefined && json_metadata.video.content.video480hash!="") {
 								var videohash = json_metadata.video.content.video480hash;
 							}
 							else
