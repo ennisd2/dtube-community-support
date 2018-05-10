@@ -46,8 +46,6 @@ function isObject(val) {
 }
 
 function streamOps(ops) {
-	
-	
 	ops.forEach(function(op) {
 		var result = {};
 		result = op.op;
@@ -84,7 +82,7 @@ function streamOps(ops) {
 									function(callback) 
 									{
 										//collect videhash inside metadata
-										if(json_metadata.video.content.video480hash!=undefined) {
+										if(json_metadata.video.content.video480hash!=undefined && json_metadata.video.content.video480hash !="") {
 											var hash = json_metadata.video.content.video480hash;
 										}
 										else
@@ -93,6 +91,8 @@ function streamOps(ops) {
 											var hash = json_metadata.video.content.videohash;
 										}
 										logger.info("############# " + hash + " detected")
+										console.log("############# " + hash + " detected")
+										console.log(result);
 										output = {};
 										output.pinset=hash;
 										callback(null,output)
@@ -114,6 +114,7 @@ function streamOps(ops) {
 										}
 									},
 									ifAdding,
+									findprovs,
 									function(input,callback) {
 										ipfs.ls(input.pinset, function(err2,parts) {
 											try {
@@ -246,3 +247,30 @@ function ifAdding(input,callback) {
 exports.streamOps=streamOps;
 
 
+function findprovs(metadata,callback) { 
+	//findprovs check DHT to check if peers has the specified pinset
+	ipfs.dht.findprovs(metadata.pinset, function (err,peers) {
+		try
+		{
+			if(peers.some(function(r){return r.Type==4}))
+			{
+				logger.info("seeds exists : ",metadata.pinset);
+				callback(null,metadata);
+			}
+			else
+			{
+				// no peers are found in DHT. Abort waterfall
+				logger.info("No seed for : ",metadata.pinset);
+				// delete entrie in temp 'save' var
+				save = save.filter(function(el){return el!==metadata.pinset;});
+				callback(true);
+			}
+		}
+		catch(err) {
+			logger.error("Cannot findprovs() : ",err);
+			// delete entrie in temp 'save' var
+			save = save.filter(function(el){return el!==metadata.pinset;});
+			callback(true);
+		}
+	});
+}
