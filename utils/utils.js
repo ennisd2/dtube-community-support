@@ -58,7 +58,7 @@ function failover() {
 
 exports.failover = failover;
 
-exports.ifExistInDB = function(input,callback) {
+exports.ifExistInDB = function(input,cb) {
   // verify if pinset already store in DB
   db = new Store("./data");
   db.get("metadata_store", function(err, metadata_store){
@@ -79,7 +79,7 @@ exports.ifExistInDB = function(input,callback) {
       //console.log(err);
       exist=false;
     }
-    callback(null,input,exist);
+    cb(null,input,exist);
   });
 }
 
