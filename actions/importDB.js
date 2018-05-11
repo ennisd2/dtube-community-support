@@ -11,7 +11,7 @@ var utils = require('../utils/utils.js');
 
   
 function getImportedDB(callback) {
-    // Get DB content
+    // Get imported DB content
     db.get("import_metadata_store", function(err, import_metadata_store){
         try
         {
@@ -20,7 +20,7 @@ function getImportedDB(callback) {
         }
         catch(err) {
             // Stop import if DB doest not exist
-            console.log("data/import_metaada_store.json does not exist.")
+            console.log("data/import_metadata_store.json does not exist.")
             callback(true);
         }
     });
@@ -100,7 +100,7 @@ function checkSize(metadata,cb) {
                 }
                 else
                 {
-                    console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
+                    console.log("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
                     cb(true)
                 }
             });
@@ -119,11 +119,17 @@ function importDB() {
         function(import_metadata_store,callback) {
             async.each(import_metadata_store, function(metadata,eachCB) {
                 async.waterfall([
+                    // check if seed exit for the pinset
                     checkSeed.bind(null,metadata),
+                    // check if enough space
                     checkSize,
+                    // pin content
                     pinAdd,
+                    // check in metadata_store if content already exists
                     utils.ifExistInDB,
+                    // get metadata_store before saving metadata in it
                     getDB,
+                    // save metadata in metadata_store
                     function(metadata,metadata_store,exist,cb) {
                         metadata_store.push(metadata);
                         db.save("metadata_store", metadata_store, function(err){
