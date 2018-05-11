@@ -1,5 +1,7 @@
 const steem = require('steem');
 var config = require('config.json')('./config.json');
+var ipfsAPI = require('ipfs-api');
+var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 var Store = require("jfs");
 const { createClient } = require('lightrpc');
 const bluebird = require('bluebird');
@@ -57,6 +59,18 @@ function failover() {
 }
 
 exports.failover = failover;
+
+function checkIPFS(cb) {
+  ipfs.version(function(err,version) {
+    if(err) 
+    { 
+      console.log("IPFS is not running ?",err.message); 
+      cb(true);
+    }
+    else cb(null);
+  });
+}
+exports.checkIPFS = checkIPFS;
 
 exports.ifExistInDB = function(input,cb) {
   // verify if pinset already store in DB
