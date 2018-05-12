@@ -112,7 +112,6 @@ function streamOps(ops) {
 										}
 									},
 									ifAdding,
-									findprovs,
 									function(input,callback) {
 										ipfs.ls(input.pinset, function(err2,parts) {
 											try {
