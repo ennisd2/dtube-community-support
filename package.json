@@ -10,7 +10,8 @@
     "add": "node app.js addPin",
     "rm": "node app.js delete",
     "show": "node app.js show",
-    "report": "node app.js report"
+    "report": "node app.js report",
+    "importDB": "node app.js importDB"
   },
   "author": "evildido <evildido@gmail.com>",
   "license": "MIT",
