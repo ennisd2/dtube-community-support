@@ -91,8 +91,6 @@ function streamOps(ops) {
 											var hash = json_metadata.video.content.videohash;
 										}
 										logger.info("############# " + hash + " detected")
-										console.log("############# " + hash + " detected")
-										console.log(result);
 										output = {};
 										output.pinset=hash;
 										callback(null,output)
