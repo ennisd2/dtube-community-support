@@ -147,4 +147,4 @@ function importDB() {
 }
 
 
-importDB();
+exports.importDB = importDB;
