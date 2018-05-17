@@ -45,7 +45,7 @@ function getDB(metadata,exist,cb) {
 function pinAdd(metadata,callback,cb) {
     console.log("try to pin : ", metadata.pinset);
     ipfs.pin.add(metadata.pinset, function(err, pinset) {
-        if(err)
+        if(!err)
         {
             console.log(metadata.pinset + " added to node");
             cb(null,metadata);
@@ -75,7 +75,7 @@ function importDB() {
                         },1000)
 
                     }.bind(null,metadata),
-                    utils.checkSize.bind(null,eachCB,metadata,callback),
+                    utils.checkSize.bind(null,metadata,callback),
                     // pin content
                     pinAdd,
                     // check in metadata_store if content already exists
@@ -97,7 +97,7 @@ function importDB() {
             });
         }
 
-    ],function(){console.log("end")});
+    ]);
 }
 
 
