@@ -98,6 +98,13 @@ Collector can started at a specific block number by using -b argument
 
 data/block_state.json store the last block number processed by the bot. When exist and if no 'block number' argument provided, the collector start from block number stored in the 'block_state.json'
 
+### Import external DB source
+
+If you want to import ipfs content based on an external metadata_store.json.
+1- Rename metadata_store.json to import_metadata_store.json
+2- Move import_metadata_store.json to data/
+3- Run npm run importDB
+
 ## Other commands
 
 #### List all stored content
