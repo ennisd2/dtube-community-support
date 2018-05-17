@@ -76,7 +76,7 @@ function checkIPFS(cb) {
 }
 exports.checkIPFS = checkIPFS;
 
-function checkSize(metadata,callback,cbSize) {
+function checkSize(metadata,cbSize) {
   // launch go-ipfs ls pinset command
   var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
 
@@ -94,9 +94,8 @@ function checkSize(metadata,callback,cbSize) {
     }
     else {
       // IPFS is not running. Stop the script (with callback of main waterfall)
-      console.log("IPFS is not running")
+      console.log("IPFS1 is not running")
       clearTimeout(timeout)
-      callback(true);
     }
   });
   ipfsLsProcess.stdout.on('data', (data) => {
@@ -113,7 +112,7 @@ function checkSize(metadata,callback,cbSize) {
             // erase 'size' in metadata
             metadata.size=size;
             // pass callback of main waterfall in order to stop script if ipfs daemon is stopped during "pin add" process
-            cbSize(null,metadata,callback)
+            cbSize(null,metadata)
         }
         else
         {
