@@ -17,30 +17,6 @@ let args = require('parse-cli-arguments')({
     }
 });
 
-function findprovs(metadata,callback) { 
-	//findprovs check DHT to check if peers has the specified pinset
-	console.log("Ty to find seed...");
-	ipfs.dht.findprovs(metadata.pinset, function (err,peers) {
-		try
-		{
-			if(peers.some(function(r){return r.Type==4}))
-			{
-				console.log("seeds exists : ",metadata.pinset);
-				callback(null,metadata);
-			}
-			else
-			{
-				// no peers are found in DHT. Abort waterfall
-				console.log("No seed for : ",metadata.pinset);
-				callback(true);
-			}
-		}
-		catch(err) {
-			console.log("Cannot findprovs() : ",err);
-			callback(true);
-		}
-	});
-}
 
 exports.addPin = function () {
 
@@ -116,25 +92,7 @@ exports.addPin = function () {
 				callback(true);
 			}
 		},
-		findprovs,
-		function(metadata,callback) {
-			var size = 0;
-			ipfs.ls(metadata.pinset, function(err,parts) {
-				parts.forEach(function(part) {
-					size += part.size;
-				});
-				ipfs.repo.stat((err,stats) => {
-					if(stats.storageMax > Number(stats.repoSize) + size) {
-						callback(null,metadata)
-					}
-					else
-					{
-						console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
-						callback(true)
-					}
-				});
-			});
-		},
+		utils.checkSize,
 		function(metadata,callback) {
 			console.log("Pinning the content, please wait...");
 			ipfs.pin.add(metadata.pinset, function(err1, pinset) {

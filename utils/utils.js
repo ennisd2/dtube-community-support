@@ -45,6 +45,7 @@ var save_block_each_time = block_per_minute * 1;
 
 var LSTIMEOUT = 120000;
 
+
 function failover() {
   // failover function
   if(config.rpc_nodes && config.rpc_nodes.length > 1) {
@@ -94,7 +95,7 @@ function checkSize(metadata,cbSize) {
     }
     else {
       // IPFS is not running. Stop the script (with callback of main waterfall)
-      console.log("IPFS1 is not running")
+      console.log("IPFS is not running")
       clearTimeout(timeout)
     }
   });
