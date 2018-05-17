@@ -76,7 +76,7 @@ function checkIPFS(cb) {
 }
 exports.checkIPFS = checkIPFS;
 
-function checkSize(eachCB,metadata,callback,cbSize) {
+function checkSize(metadata,callback,cbSize) {
   // launch go-ipfs ls pinset command
   var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
 
