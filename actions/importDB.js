@@ -20,7 +20,7 @@ function getImportedDB(callback) {
         }
         catch(err) {
             // Stop import if DB doest not exist
-            console.log("data/import_metadata_store.json does not exist.")
+            console.log("data/import_metadata_store.json does not exist. : ",err)
             callback(true);
         }
     });
@@ -29,7 +29,6 @@ function getImportedDB(callback) {
 
 function getDB(metadata,exist,cb) {
     // get metadata_store before saving metadata in it
-
     if(!exist) {
         db.get("metadata_store", function(err, metadata_store){
             if(err) metadata_store=[];
@@ -37,92 +36,46 @@ function getDB(metadata,exist,cb) {
         });
     }
     else {
-        // abort if pinset already exist in metadata_store
+        // don't add to metada_store if pinset already exists in it
         cb(true);
     }
 
 }
 
-
-function checkSeed(metadata,cb) {
-    // iterate each entries to find and delete pinset without seed
-
-    ipfs.dht.findprovs(metadata.pinset, function (err,peers) {
-        if(!err)
-        {   
-            if(!peers.some(function(r){return r.Type==4})) {
-                // abort, if content cannot be downloaded
-                console.log(metadata.pinset, + " cannot be downloaded")
-                cb(true);
-            }
-            else {
-                console.log(metadata.pinset + " can be downloaded")
-                cb(null,metadata);
-            }
-        }
-        else
-        {
-            console.log(" error occurs in findprovs() : ",err.message);
-            cb(true);
-        }
-    });
-
-
-}
-
-function pinAdd(metadata,cb) {
+function pinAdd(metadata,callback,cb) {
+    console.log("try to pin : ", metadata.pinset);
     ipfs.pin.add(metadata.pinset, function(err, pinset) {
-        if(!err)
+        if(err)
         {
             console.log(metadata.pinset + " added to node");
             cb(null,metadata);
         }
         else
         {
-            console.log("IPFS is not running ? ",err.message);
-            cb(true);
+            //
+            console.log("IPFS is not running");
+            callback(true);
         }
     });
 
 }
 
-function checkSize(metadata,cb) {
 
-    var size = 0;
-    ipfs.ls(metadata.pinset, function(err,parts) {
-        if(!err)
-        {
-            parts.forEach(function(part) {
-                size += part.size;
-            });
-            ipfs.repo.stat((err,stats) => {
-                if(stats.storageMax > Number(stats.repoSize) + size) {
-                    // erase 'size' in metadata
-                    cb(null,metadata)
-                }
-                else
-                {
-                    console.log("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
-                    cb(true)
-                }
-            });
-        }
-        else 
-        {
-            console.log("IPFS is not running ? ",err.message);
-            cb(true);
-        }
-    });
-}
+
 function importDB() {
     async.waterfall([
-        utils.checkIPFS,
         getImportedDB,
         function(import_metadata_store,callback) {
-            async.each(import_metadata_store, function(metadata,eachCB) {
+            async.eachLimit(import_metadata_store, 1,function(metadata,eachCB) {
                 async.waterfall([
-                    // check if enough space
-                    checkSize.bind(null,metadata),
+                    function(metadata,cb) {
+                        setTimeout(function(){
+                            console.log(metadata.pinset," detected");
+                            cb(null)
+                        },1000)
+
+                    }.bind(null,metadata),
+                    utils.checkSize.bind(null,eachCB,metadata,callback),
                     // pin content
                     pinAdd,
                     // check in metadata_store if content already exists
@@ -130,20 +83,21 @@ function importDB() {
                     // get metadata_store before saving metadata in it
                     getDB,
                     // save metadata in metadata_store
-                    function(metadata,metadata_store,exist,cb) {
+                    function(metadata,metadata_store,cb) {
+                        
                         metadata_store.push(metadata);
                         db.save("metadata_store", metadata_store, function(err){
                             console.log(metadata.pinset + " metadata stored");
-                            eachCB();
+                            cb(null)
                         });
                     }
-                ]);
+                ],function(err) {
+                    eachCB()
+                });
             });
         }
 
-    ]);
-    
-
+    ],function(){console.log("end")});
 }
 
 
