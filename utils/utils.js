@@ -7,6 +7,8 @@ const { createClient } = require('lightrpc');
 const bluebird = require('bluebird');
 var Store = require("jfs");
 var db = new Store("./data");
+const { spawn } = require('child_process');
+
 
 
 var winston = require('winston');
@@ -41,6 +43,8 @@ var log_block_each_time = block_per_minute * 60;
 // save block state each minutes
 var save_block_each_time = block_per_minute * 1;
 
+var LSTIMEOUT = 120000;
+
 function failover() {
   // failover function
   if(config.rpc_nodes && config.rpc_nodes.length > 1) {
@@ -72,6 +76,60 @@ function checkIPFS(cb) {
 }
 exports.checkIPFS = checkIPFS;
 
+function checkSize(eachCB,metadata,callback,cbSize) {
+  // launch go-ipfs ls pinset command
+  var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
+
+  var timeout = setTimeout(function() {
+    // Kill child process if "ipfs ls" takes too long to respond
+    ipfsLsProcess.stdin.pause();
+    ipfsLsProcess.kill('SIGINT');
+  }, LSTIMEOUT);
+
+  ipfsLsProcess.stderr.on('data', (data) => {
+    if(data.toString()!="Error: api not running\n") {
+      // No response from ipfs ls. Pass to the next pinset
+      console.log('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
+      cbSize(true);
+    }
+    else {
+      // IPFS is not running. Stop the script (with callback of main waterfall)
+      console.log("IPFS is not running")
+      clearTimeout(timeout)
+      callback(true);
+    }
+  });
+  ipfsLsProcess.stdout.on('data', (data) => {
+    // calcul contente size
+    if(data.toString()!='\n') {
+      var size = 0;
+      part = data.toString().split('\n');
+      part=part.filter(function(el){return el!=='';});
+      part.forEach(element => {
+          size += Number(element.split(" ")[1]);
+      });
+      ipfs.repo.stat((err,stats) => {
+        if(stats.storageMax > Number(stats.repoSize) + size) {
+            // erase 'size' in metadata
+            metadata.size=size;
+            // pass callback of main waterfall in order to stop script if ipfs daemon is stopped during "pin add" process
+            cbSize(null,metadata,callback)
+        }
+        else
+        {
+            console.log("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
+            cbSize(true);
+        }
+      });
+      // Prevent to kill another process (using the last "ipfs ls" pid )
+      clearTimeout(timeout);
+
+    }
+  })
+}
+
+exports.checkSize = checkSize;
+
 exports.ifExistInDB = function(input,cb) {
   // verify if pinset already store in DB
   db = new Store("./data");
@@ -90,7 +148,7 @@ exports.ifExistInDB = function(input,cb) {
     }
     else
     {
-      //console.log(err);
+      console.log(err);
       exist=false;
     }
     cb(null,input,exist);
@@ -140,7 +198,7 @@ function catchup(blockNumber) {
         logger.info('At block : ',blockNumber, ' timestamp ',ops[0].timestamp)
       }
       block_processed +=1;
-      // Process the block and search dtube cotent
+      // Process the block and search dtube content
       stream.streamOps(ops);
 
       return catchup(blockNumber + 1);
