@@ -148,7 +148,6 @@ exports.ifExistInDB = function(input,cb) {
     }
     else
     {
-      console.log(err);
       exist=false;
     }
     cb(null,input,exist);
