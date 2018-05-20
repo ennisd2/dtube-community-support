@@ -45,9 +45,6 @@ var save_block_each_time = block_per_minute * 1;
 
 var LSTIMEOUT = 120000;
 
-// dtube app (use to filter author blog)
-var DTUBE_APP = config.dtube_app;
-
 
 function failover() {
   // failover function
@@ -81,7 +78,6 @@ function checkIPFS(cb) {
 exports.checkIPFS = checkIPFS;
 
 function checkSize(metadata,cbSize) {
-  console.log("Try to find seed for : ",metadata.pinset)
   // launch go-ipfs ls pinset command
   var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
 
@@ -226,38 +222,3 @@ function saveBlockState(blockNumber) {
   db.save("block_state", state);
 }
 
-function getBlogAuthor(author,cb) {
-  //Return all last 500 publications (except resteem)
-  lightrpc.sendAsync('condenser_api.get_blog', [author,0,500]).then(blog => {
-    blog = blog.filter(function(el){return el.comment.author===author;});
-    cb(null,blog)
-  }).catch(err => {
-    console.log(err)
-    cb(true);
-  })
-}
-exports.getBlogAuthor=getBlogAuthor;
-function getDtubeContent(blog,cb) {
-  // Find dtube content in the blog
-  var dtubeBlog = [];
-  try{
-    blog.forEach((post) => {
-      // test if json_metadata can be parsed 
-      json_metadata = JSON.parse(post.comment.json_metadata);    
-      // test if json_metadata is an object
-      if(!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
-      if (json_metadata.app =='{}') throw new Error('Bad format format : json_metadata.app')
-      if (json_metadata.app=="") throw new Error("json_metadata.app is empty");
-      
-      if (json_metadata.app.includes(DTUBE_APP)) {
-        dtubeBlog.push(post)
-      }
-    })
-    cb(null,dtubeBlog);
-  }
-  catch(err) {
-    cb(true)
-  }
-}
-
-exports.getDtubeContent = getDtubeContent;
