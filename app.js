@@ -36,8 +36,8 @@ switch(args._args[0]) {
 	case "listAuthor":
 		list.listByAuthor();
 		break;
-	case "addPin":
-		add.addPin()
+	case "add":
+		add.addMain();
 		break;
 	case "delete":
 		del.main();
