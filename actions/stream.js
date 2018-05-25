@@ -243,31 +243,3 @@ function ifAdding(input,callback) {
 
 exports.streamOps=streamOps;
 
-
-function findprovs(metadata,callback) { 
-	//findprovs check DHT to check if peers has the specified pinset
-	ipfs.dht.findprovs(metadata.pinset, function (err,peers) {
-		try
-		{
-			if(peers.some(function(r){return r.Type==4}))
-			{
-				logger.info("seeds exists : ",metadata.pinset);
-				callback(null,metadata);
-			}
-			else
-			{
-				// no peers are found in DHT. Abort waterfall
-				logger.info("No seed for : ",metadata.pinset);
-				// delete entrie in temp 'save' var
-				save = save.filter(function(el){return el!==metadata.pinset;});
-				callback(true);
-			}
-		}
-		catch(err) {
-			logger.error("Cannot findprovs() : ",err);
-			// delete entrie in temp 'save' var
-			save = save.filter(function(el){return el!==metadata.pinset;});
-			callback(true);
-		}
-	});
-}
