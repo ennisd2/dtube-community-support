@@ -9,44 +9,82 @@ var async = require("async");
 var list = require('./list.js');
 var utils = require('../utils/utils.js');
 
-const dtube_regex = RegExp('https:\/\/d\.tube\/#!\/v\/(.*)\/(.*)$','g');
+const dtube_regex = /([a-z][a-z\d.-]{1,14}[a-z\d])\/([a-z\d-]+)\/?$/mg;
+
 let args = require('parse-cli-arguments')({
     options: {
 
-        dtube_url: { alias: 'u' },
+		dtube_url: { alias: 'u' },
+		author: {alias: 'a'}
     }
 });
 
-exports.addPin = function () {
+function addMain() {
+	try {
+		if((args.author==undefined && args.dtube_url==undefined ) || (args.author==true || args.dtube_url==true)) throw new Error("Please use add wth -a (add author) or -y (add dtube url)")
+		if(args.author!=undefined) addAuthor();
+		if(args.dtube_url!=undefined) addURL();
+	}
+	catch(err)
+	{
+		console.log(err.message)
+	}
+}
 
+exports.addMain=addMain;
+
+function addAuthor() {
+	try
+	{
+		var author = args.author;
+		console.log("Try to pin all dtube content for : ",author) 
+		async.waterfall([
+			utils.getBlogAuthor.bind(null,author),
+			utils.getDtubeContent,
+			function(blog,cb) {
+				async.eachLimit(blog,1,function(post,eachCB) {
+					addPin(author,post.comment.permlink,eachCB);
+				})
+			}
+
+		])
+	}
+	catch(err)
+	{
+		console.log(err.message)
+	}
+}
+
+function addURL() {
+	// Get author and permlink (used by steem.api.getContent)
 	while ((m = dtube_regex.exec(args.dtube_url)) !== null) {
-	    // This is necessary to avoid infinite loops with zero-width matches
 	    if (m.index === dtube_regex.lastIndex) {
 	        regex.lastIndex++;
 	    }
-	    
 	    var author = m[1];
-	    var permlink = m[2];
-	}
+		var permlink = m[2];
 
+	}
+	addPin(author,permlink,function(){});
+}
+
+function addPin(author,permlink,cbAdd) {
 	async.waterfall([
 		function(callback) {
 			steem.api.getContent(author,permlink, function(err, result) {
 				try {
-
+					// try to find ipfs hash (480p or source) in json_metadata
 					if(result.id!=0) {
 						if(result.json_metadata!='{}' && result.json_metadata!="") {
 							var metadata = {};
 							json_metadata = JSON.parse(result.json_metadata);
-							if(json_metadata.video.content.video480hash!=undefined) {
+							if(json_metadata.video.content.video480hash!=undefined && json_metadata.video.content.video480hash!="") {
 								var videohash = json_metadata.video.content.video480hash;
 							}
 							else
 							{
-								// if 480p not available
 								var videohash = json_metadata.video.content.videohash;
 
-							
 							}
 
 
@@ -58,13 +96,11 @@ exports.addPin = function () {
 							metadata.link = "/#!/v/" + author + "/" + permlink;
 							metadata.date = new Date(result.created);
 							callback(null,metadata);
-		
-						}	
+						}
 						else
 						{
 							console.log("invalid metadata in post");
 							callback(true);
-		
 						}
 					}
 					else
@@ -72,7 +108,6 @@ exports.addPin = function () {
 						console.log("dtube video doest not exist");
 						callback(true);
 					}
-					
 				}
 				catch(err) {
 					console.log("Cannot connect to steem api");
@@ -82,26 +117,9 @@ exports.addPin = function () {
 			})
 		},
 		utils.ifExistInDB,
-		function(metadata,exist,callback) {
+		function(metadata,exist,callback){
 			if(!exist) {
-				var size = 0;
-				ipfs.ls(metadata.pinset, function(err,parts) {
-					parts.forEach(function(part) {
-						size += part.size;
-	
-					});
-					ipfs.repo.stat((err,stats) => {
-						if(stats.storageMax > Number(stats.repoSize) + size) {
-							callback(null,metadata)
-						}
-						else
-						{
-							console.log("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
-							callback(true)
-						}
-					});
-					
-				});
+				callback(null,metadata)
 			}
 			else
 			{
@@ -109,8 +127,8 @@ exports.addPin = function () {
 				callback(true);
 			}
 		},
+		utils.checkSize,
 		function(metadata,callback) {
-
 			console.log("Pinning the content, please wait...");
 			ipfs.pin.add(metadata.pinset, function(err1, pinset) {
 				try
@@ -154,11 +172,12 @@ exports.addPin = function () {
 				callback(true);
 			}
 		},
-		function(metadata_store,hash) {
+		function(metadata_store,hash,callback) {
 			db.save("metadata_store", metadata_store, function(err){
 				console.log("############# " + hash + " metadata stored");
+				callback(null)
 			});
 		}
 
-	])
+	],function(err) {cbAdd(null)})
 }

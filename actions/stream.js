@@ -46,8 +46,6 @@ function isObject(val) {
 }
 
 function streamOps(ops) {
-	
-	
 	ops.forEach(function(op) {
 		var result = {};
 		result = op.op;
@@ -84,7 +82,7 @@ function streamOps(ops) {
 									function(callback) 
 									{
 										//collect videhash inside metadata
-										if(json_metadata.video.content.video480hash!=undefined) {
+										if(json_metadata.video.content.video480hash!=undefined && json_metadata.video.content.video480hash !="") {
 											var hash = json_metadata.video.content.video480hash;
 										}
 										else
@@ -244,5 +242,4 @@ function ifAdding(input,callback) {
 }
 
 exports.streamOps=streamOps;
-
 

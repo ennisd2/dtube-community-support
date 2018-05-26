@@ -19,6 +19,8 @@ let args = require('parse-cli-arguments')({
     }
 });
 
+var options = { year: 'numeric', month: 'short', day: 'numeric' };
+
 
 function onlyUnique(value, index, self) { 
     return self.indexOf(value) === index;
@@ -79,8 +81,6 @@ exports.listByAuthor = function (){
 
 
 exports.showPinset = function() {
-
-
 	db.get("metadata_store", function(err, metadata_store){
 		if(metadata_store.some(function(r){return r.pinset===args.pinset})) {
 			metadata = [];
@@ -139,9 +139,10 @@ exports.list = function () {
 					metadata_store.forEach((result)=>{
 						tmp = {};
 						tmp.pinset=result.pinset;
-						tmp.date=new Date(result.date);
+						tmp.date=new Date(result.date).toLocaleDateString("en-US",options);
 						tmp.size = Number(result.size/1000000).toFixed(2) + "Mo";
 						tmp.link = result.link;
+						tmp.title = result.title;
 						list.push(tmp);
 					});
 	

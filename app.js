@@ -9,6 +9,7 @@ var async = require("async");
 var list = require('./actions/list.js');
 var add = require('./actions/add.js');
 var del = require('./actions/del.js');
+var importDB = require('./actions/importDB.js');
 
 let configuration = {
     options: {},  //Object 
@@ -35,8 +36,8 @@ switch(args._args[0]) {
 	case "listAuthor":
 		list.listByAuthor();
 		break;
-	case "addPin":
-		add.addPin()
+	case "add":
+		add.addMain();
 		break;
 	case "delete":
 		del.main();
@@ -47,6 +48,10 @@ switch(args._args[0]) {
 	case "report":
 		list.report();
 		break;
+	case "importDB":
+		importDB.importDB();
+		break;
+
 
 }
 
