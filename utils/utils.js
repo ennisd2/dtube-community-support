@@ -73,6 +73,7 @@ function checkIPFS(cb) {
     if(err) 
     { 
       console.log("IPFS is not running ?",err.message); 
+      process.exit();
       cb(true);
     }
     else cb(null);
