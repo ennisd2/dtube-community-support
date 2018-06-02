@@ -19,6 +19,7 @@ var cur_node_index = 0;
 var lightrpc = createClient(config.rpc_nodes[cur_node_index]);
 bluebird.promisifyAll(lightrpc);
 bluebird.promisifyAll(db);
+bluebird.promisifyAll(utils);
 
 
 
@@ -46,8 +47,7 @@ let args = require('parse-cli-arguments')({
 
 
 function start() {
-    
-  
+  utils.checkIPFSAsync();
 
   if(args.blockNumber!=undefined) {
     // take blockNumber passed thought argument
