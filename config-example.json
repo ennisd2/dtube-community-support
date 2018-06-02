@@ -1,0 +1,15 @@
+{
+	"tags": ["fr"],
+	"dtube_app": "dtube",
+	"rpc_nodes": [
+		"https://api.steemit.com",
+		"https://rpc.steemviz.com",
+		"https://api.steem.house",
+		"https://rpc.curiesteem.com",
+		"https://steemd.privex.io",
+		"https://api.steem.house",
+		"https://gtg.steem.house:8090"
+	],
+	"blacklist": [],
+	"whitelist": []
+}

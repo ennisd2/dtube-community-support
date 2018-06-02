@@ -3,8 +3,9 @@ var ipfsAPI = require('ipfs-api');
 var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 var conf = require('config.json')('./config.json');
 var Store = require("jfs");
-
 var async = require("async");
+const { spawn } = require('child_process');
+
 var winston = require('winston');
 require('winston-daily-rotate-file');
 
@@ -41,9 +42,15 @@ var save = [];
 // "size_tmp" is the sum of all content content in the pinning process  
 var size_tmp = 0;
 
+var LSTIMEOUT = 120000;
+
 function isObject(val) {
     return val instanceof Object; 
 }
+
+
+
+
 
 function streamOps(ops) {
 	ops.forEach(function(op) {
@@ -112,44 +119,7 @@ function streamOps(ops) {
 										}
 									},
 									ifAdding,
-									function(input,callback) {
-										ipfs.ls(input.pinset, function(err2,parts) {
-											try {
-											var content_size = 0;
-											// check if enought space in repo before pinning it
-											parts.forEach(function(part) {
-												// increment global size_tmp
-												content_size += part.size;
-											});
-											// add content size to content processed
-											size_tmp+=content_size;
-											ipfs.repo.stat((err,stats) => {
-												logger.info("repo size : " + Number(stats.repoSize));
-												logger.info("size tmp : "+size_tmp)
-												logger.info("content size :"+content_size)
-												// don't pin if not enough free space (repoSize + content in pinning process)
-												if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
-													callback(null,input)
-												}
-												else
-												{
-													// content not pinned, substract content size
-													size_tmp-=content_size;
-													logger.info("not enought space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)")
-													logger.info("repo size : " + Number(stats.repoSize));
-													logger.info("new size tmp : "+size_tmp)
-													// content not pinned, substract content size
-													size_tmp-=content_size;
-													callback(true)
-												}
-											});
-											}
-											catch(e) {
-												save = save.filter(function(el){return el!==input.pinset;});
-												console.log(e)
-											}
-										});
-									},
+									checkSize,
 									function(input,callback) {
 										steem.api.getContent(result[1].author,result[1].permlink, function(err, content) {
 											//get 'created' data (not given in block)
@@ -240,6 +210,73 @@ function ifAdding(input,callback) {
 	}
 
 }
+
+function checkSize(metadata,cbSize) {
+	logger.error("Try to find seed for : ",metadata.pinset)
+	// launch go-ipfs ls pinset command
+	var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
+  
+	var timeout = setTimeout(function() {
+		save = save.filter(function(el){return el!==metadata.pinset;});
+
+		// Kill child process if "ipfs ls" takes too long to respond
+		ipfsLsProcess.stdin.pause();
+		ipfsLsProcess.kill('SIGINT');
+
+	}, LSTIMEOUT);
+  
+	ipfsLsProcess.stderr.on('data', (data) => {
+	  if(data.toString()!="Error: api not running\n") {
+		// No response from ipfs ls. Pass to the next pinset
+		logger.info('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
+		// delete entrie in temp 'save' var
+		save = save.filter(function(el){return el!==metadata.pinset;});
+
+		cbSize(true);
+	  }
+	  else {
+		// IPFS is not running. Stop the script (with callback of main waterfall)
+		console.log("IPFS is not running")
+		// delete entrie in temp 'save' var
+		save = save.filter(function(el){return el!==metadata.pinset;});
+
+		clearTimeout(timeout)
+		process.exit();
+	  }
+	});
+	ipfsLsProcess.stdout.on('data', (data) => {
+	  // calcul contente size
+	  if(data.toString()!='\n') {
+		var size = 0;
+		part = data.toString().split('\n');
+		part=part.filter(function(el){return el!=='';});
+		part.forEach(element => {
+			size += Number(element.split(" ")[1]);
+		});
+		size_tmp +=size;
+		ipfs.repo.stat((err,stats) => {
+		  if(stats.storageMax > Number(stats.repoSize) + size_tmp) {
+			  // erase 'size' in metadata
+			  metadata.size=size;
+			  cbSize(null,metadata)
+		  }
+		  else
+		  {
+			  
+			  logger.error("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
+			  logger.info("repo size : " + Number(stats.repoSize));
+			  // delete entrie in temp 'save' var 
+			  save = save.filter(function(el){return el!==metadata.pinset;});
+			  size_tmp-=size;
+			  cbSize(true);
+		  }
+		});
+		// Prevent to kill another process (using the last "ipfs ls" pid )
+		clearTimeout(timeout);
+  
+	  }
+	})
+  }
 
 exports.streamOps=streamOps;
 
