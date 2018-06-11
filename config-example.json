@@ -2,8 +2,8 @@
 	"tags": ["fr"],
 	"dtube_app": "dtube",
 	"rpc_nodes": [
-		"https://rpc.steemviz.com",
 		"https://api.steemit.com",
+		"https://rpc.steemviz.com",
 		"https://api.steem.house",
 		"https://rpc.curiesteem.com",
 		"https://steemd.privex.io",
