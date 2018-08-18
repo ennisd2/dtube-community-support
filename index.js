@@ -1,19 +1,17 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./config.json');
-var Store = require("jfs");
-var db = new Store("data");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./config.json');
+const Store = require("jfs");
+const db = new Store("data");
 const {createClient} = require('lightrpc');
 const bluebird = require('bluebird');
-
-
-var async = require("async");
-var utils = require('./utils/utils.js');
+const async = require("async");
+const utils = require('./utils/utils.js');
 
 // set rpc node
-var cur_node_index = 0;
-var lightrpc = createClient(config.rpc_nodes[cur_node_index]);
+let cur_node_index = 0;
+let lightrpc = createClient(config.rpc_nodes[cur_node_index]);
 bluebird.promisifyAll(lightrpc);
 bluebird.promisifyAll(db);
 bluebird.promisifyAll(utils);

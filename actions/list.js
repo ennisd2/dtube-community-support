@@ -1,14 +1,14 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./../config.json');
-var Store = require("jfs");
-var db = new Store("./data");
-var async = require("async");
-var columnify = require('columnify');
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./../config.json');
+const Store = require("jfs");
+const db = new Store("./data");
+const async = require("async");
+const columnify = require('columnify');
 
 
-var list = require('./list.js');
+let list = require('./list.js');
 
 let args = require('parse-cli-arguments')({
   options: {
@@ -19,9 +19,15 @@ let args = require('parse-cli-arguments')({
   }
 });
 
-var options = {year: 'numeric', month: 'short', day: 'numeric'};
+let options = {year: 'numeric', month: 'short', day: 'numeric'};
 
-
+/**
+ *
+ * @param value
+ * @param index
+ * @param self
+ * @returns {boolean}
+ */
 function onlyUnique(value, index, self) {
   return self.indexOf(value) === index;
 }

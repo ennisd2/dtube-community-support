@@ -1,17 +1,17 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./../config.json');
-var Store = require("jfs");
-var db = new Store("./data");
-var async = require("async");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./../config.json');
+const Store = require("jfs");
+const db = new Store("./data");
+const async = require("async");
 
-var list = require('./list.js');
-var utils = require('../utils/utils.js');
+const list = require('./list.js');
+const utils = require('../utils/utils.js');
 
 const dtube_regex = /([a-z][a-z\d.-]{1,14}[a-z\d])\/([a-z\d-]+)\/?$/mg;
 
-let args = require('parse-cli-arguments')({
+const args = require('parse-cli-arguments')({
   options: {
     dtube_url: {alias: 'u'},
     author: {alias: 'a'}
@@ -74,6 +74,12 @@ function addURL() {
   addPin(author, permlink);
 }
 
+/**
+ * Get the post from the Steem blockchain and check for an IPFS hash
+ * @param author
+ * @param permlink
+ * @returns {Promise<null>}
+ */
 async function fetchMetadataFromSteem(author, permlink) {
   try {
     let result = await steem.api.getContentAsync(author, permlink);

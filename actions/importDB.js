@@ -1,15 +1,18 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./../config.json');
-var Store = require("jfs");
-var db = new Store("./data");
-var async = require("async");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./../config.json');
+const Store = require("jfs");
+const db = new Store("./data");
+const async = require("async");
 
-var list = require('./list.js');
-var utils = require('../utils/utils.js');
+const list = require('./list.js');
+const utils = require('../utils/utils.js');
 
-
+/**
+ *
+ * @param callback
+ */
 function getImportedDB(callback) {
   // Get imported DB content
   db.get("import_metadata_store", function (err, import_metadata_store) {
@@ -25,7 +28,12 @@ function getImportedDB(callback) {
   });
 }
 
-
+/**
+ *
+ * @param metadata
+ * @param exist
+ * @param cb
+ */
 function getDB(metadata, exist, cb) {
   // get metadata_store before saving metadata in it
   if (!exist) {
@@ -41,6 +49,11 @@ function getDB(metadata, exist, cb) {
 
 }
 
+/**
+ *
+ * @param metadata
+ * @param cb
+ */
 function pinAdd(metadata, cb) {
   console.log("try to pin : ", metadata.pinset);
   ipfs.pin.add(metadata.pinset, function (err, pinset) {
@@ -56,7 +69,9 @@ function pinAdd(metadata, cb) {
 
 }
 
-
+/**
+ *
+ */
 function importDB() {
   async.waterfall([
     getImportedDB,

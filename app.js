@@ -1,15 +1,15 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./config.json');
-var Store = require("jfs");
-var db = new Store("data");
-var async = require("async");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./config.json');
+const Store = require("jfs");
+const db = new Store("data");
+const async = require("async");
 
-var list = require('./actions/list.js');
-var add = require('./actions/add.js');
-var del = require('./actions/del.js');
-var importDB = require('./actions/importDB.js');
+const list = require('./actions/list.js');
+const add = require('./actions/add.js');
+const del = require('./actions/del.js');
+const importDB = require('./actions/importDB.js');
 
 let configuration = {
   options: {},  //Object
@@ -51,11 +51,15 @@ switch (args._args[0]) {
   case "importDB":
     importDB.importDB();
     break;
-
-
 }
 
-
+/**
+ *
+ * @param value
+ * @param index
+ * @param self
+ * @returns {boolean}
+ */
 function onlyUnique(value, index, self) {
   return self.indexOf(value) === index;
 }

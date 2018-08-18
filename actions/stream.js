@@ -1,12 +1,12 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var conf = require('config.json')('./config.json');
-var Store = require("jfs");
-var async = require("async");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const conf = require('config.json')('./config.json');
+const Store = require("jfs");
+const async = require("async");
 const {spawn} = require('child_process');
 
-var utils = require('../utils/utils.js');
+let utils = require('../utils/utils.js');
 
 const rotate = require('rotate-log');
 const logger = rotate({
@@ -17,28 +17,36 @@ const logger = rotate({
 
 
 //used to listen only dtube publication.
-var dtube_app = conf.dtube_app;
+let dtube_app = conf.dtube_app;
 // used to pin content of one  of tags configured in configu.json
-var tags = conf.tags;
-var blacklist = conf.blacklist;
-var whitelist = conf.whitelist;
+let tags = conf.tags;
+let blacklist = conf.blacklist;
+let whitelist = conf.whitelist;
 
 // 'save' is used to prevent to pin when authors edit dtube publication multiple times while video is 'pin add' is running
 // hash is added before "pin add"
 // hash is deleted after "pin add"
-var save = [];
+let save = [];
 
 // 'size_tmp' is used to check that the maximum size of the directory is not exceeded
 // "size_tmp" is the sum of all content content in the pinning process  
-var size_tmp = 0;
+let size_tmp = 0;
 
-var LSTIMEOUT = 120000;
+let LSTIMEOUT = 120000;
 
+/**
+ *
+ * @param val
+ * @returns {boolean}
+ */
 function isObject(val) {
   return val instanceof Object;
 }
 
-
+/**
+ *
+ * @param ops
+ */
 function streamOps(ops) {
   ops.forEach(function (op) {
     var result = {};
@@ -196,6 +204,11 @@ function ifAdding(input, callback) {
 
 }
 
+/**
+ *
+ * @param metadata
+ * @param cbSize
+ */
 function checkSize(metadata, cbSize) {
   logger.error("Try to find seed for : ", metadata.pinset)
   // launch go-ipfs ls pinset command

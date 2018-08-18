@@ -1,16 +1,16 @@
 const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./../config.json');
-var Store = require("jfs");
-var db = new Store("./data");
-var async = require("async");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./../config.json');
+const Store = require("jfs");
+const db = new Store("./data");
+const async = require("async");
 
-var list = require('./list.js');
-var utils = require('../utils/utils.js');
+const list = require('./list.js');
+const utils = require('../utils/utils.js');
 
 
-let args = require('parse-cli-arguments')({
+const args = require('parse-cli-arguments')({
   options: {
 
     pinset: {alias: 'p'},
@@ -19,10 +19,23 @@ let args = require('parse-cli-arguments')({
   }
 });
 
+/**
+ *
+ * @param value
+ * @param index
+ * @param self
+ * @returns {boolean}
+ */
 function onlyUnique(value, index, self) {
   return self.indexOf(value) === index;
 }
 
+/**
+ *
+ * @param author
+ * @param metadata
+ * @returns {*}
+ */
 filterByAuthor = function (author, metadata) {
   metadataFilter = metadata.filter(result => {
     return result.author == author
@@ -31,6 +44,12 @@ filterByAuthor = function (author, metadata) {
   return metadataFilter;
 }
 
+/**
+ *
+ * @param date
+ * @param metadata
+ * @returns {*}
+ */
 filterByDate = function (date, metadata) {
   metadataFilter = metadata.filter(result => {
     return new Date(result.date) < date;
@@ -40,6 +59,12 @@ filterByDate = function (date, metadata) {
 
 }
 
+/**
+ *
+ * @param pinset
+ * @param metadata
+ * @returns {*}
+ */
 filterByPinset = function (pinset, metadata) {
   metadataFilter = metadata.filter(result => {
     return result.pinset == pinset
@@ -49,6 +74,10 @@ filterByPinset = function (pinset, metadata) {
 
 }
 
+/**
+ *
+ * @param metadata
+ */
 remove = function (metadata) {
 
   async.waterfall([
@@ -97,7 +126,9 @@ remove = function (metadata) {
 
 }
 
-
+/**
+ *
+ */
 exports.main = function () {
   if (args.pinset != undefined) {
     db.get("metadata_store", function (err, metadata) {

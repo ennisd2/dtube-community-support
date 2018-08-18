@@ -1,11 +1,11 @@
 const steem = require('steem');
-var config = require('config.json')('./config.json');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const config = require('config.json')('./config.json');
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 const {createClient} = require('lightrpc');
 const bluebird = require('bluebird');
-var Store = require("jfs");
-var db = new Store("./data");
+const Store = require("jfs");
+const db = new Store("./data");
 const {spawn} = require('child_process');
 
 const rotate = require('rotate-log');
@@ -15,28 +15,30 @@ const logger = rotate({
   pattern: '.yyyy-MM-dd.log'
 });
 
-var stream = require('../actions/stream.js');
+let stream = require('../actions/stream.js');
 
 // set rpc node
-var cur_node_index = 0;
-var lightrpc = createClient(config.rpc_nodes[cur_node_index]);
+let cur_node_index = 0;
+let lightrpc = createClient(config.rpc_nodes[cur_node_index]);
 bluebird.promisifyAll(lightrpc);
 bluebird.promisifyAll(db);
 
 // those var are used to print 'block' logs each X minutes 
-var block_processed = 0;
-var block_per_minute = 20;
+let block_processed = 0;
+let block_per_minute = 20;
 // print each hours
-var log_block_each_time = block_per_minute * 60;
+let log_block_each_time = block_per_minute * 60;
 // save block state each minutes
-var save_block_each_time = block_per_minute * 1;
+let save_block_each_time = block_per_minute * 1;
 
-var LSTIMEOUT = 120000;
+let LSTIMEOUT = 120000;
 
 // dtube app (use to filter author blog)
-var DTUBE_APP = config.dtube_app;
+let DTUBE_APP = config.dtube_app;
 
-
+/**
+ *
+ */
 function failover() {
   // failover function
   if (config.rpc_nodes && config.rpc_nodes.length > 1) {
@@ -56,6 +58,10 @@ function failover() {
 
 exports.failover = failover;
 
+/**
+ *
+ * @param cb
+ */
 function checkIPFS(cb) {
   ipfs.version(function (err, version) {
     if (err) {
@@ -71,6 +77,11 @@ exports.checkIPFS = checkIPFS;
 
 exports.checkSize = checkSize;
 
+/**
+ *
+ * @param metadata
+ * @returns {Promise}
+ */
 function checkSize(metadata) {
   return new Promise(function (resolve, reject) {
     console.log("Try to find seed for : ", metadata.pinset)
@@ -156,6 +167,10 @@ exports.ifExistInDB = function (input, cb) {
   return false;
 }
 
+/**
+ *
+ * @param blockNumber
+ */
 function catchup(blockNumber) {
 
 
@@ -219,11 +234,20 @@ function catchup(blockNumber) {
 
 exports.catchup = catchup;
 
+/**
+ *
+ * @param blockNumber
+ */
 function saveBlockState(blockNumber) {
   state = {blockNumber: blockNumber}
   db.save("block_state", state);
 }
 
+/**
+ *
+ * @param author
+ * @param cb
+ */
 function getBlogAuthor(author, cb) {
   //Return all last 500 publications (except resteem)
   lightrpc.sendAsync('condenser_api.get_blog', [author, 0, 500]).then(blog => {
@@ -239,6 +263,11 @@ function getBlogAuthor(author, cb) {
 
 exports.getBlogAuthor = getBlogAuthor;
 
+/**
+ *
+ * @param blog
+ * @param cb
+ */
 function getDtubeContent(blog, cb) {
   // Find dtube content in the blog
   var dtubeBlog = [];
