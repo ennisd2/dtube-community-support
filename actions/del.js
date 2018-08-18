@@ -4,7 +4,6 @@ const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 const config = require('config.json')('./../config.json');
 const Store = require("jfs");
 const db = new Store("./data");
-const async = require("async");
 
 const list = require('./list.js');
 const utils = require('../utils/utils.js');
@@ -78,52 +77,35 @@ filterByPinset = function (pinset, metadata) {
  *
  * @param metadata
  */
-remove = function (metadata) {
-
-  async.waterfall([
-    function (callback) {
-
-      async.forEachOf(metadata, function (el, i, cb) {
-        ipfs.pin.rm(el.pinset, {recursive: true}, function (err, pinset) {
-          if (!err) console.log(pinset[0].hash + " removed");
-          cb();
-
-        });
-      }, function (err) {
-        callback(null, metadata);
-      });
-
-
-    },
-    function (metadata, callback) {
-      db.get("metadata_store", function (err, metadata_store) {
-        metadata.forEach(result => {
-          metadata_store = metadata_store.filter(re => {
-            return re.pinset != result.pinset
-          });
-        })
-        callback(null, metadata_store);
-      })
-    },
-    function (metadata_store, callback) {
-      db.save("metadata_store", metadata_store, function (err) {
-        callback(null)
-      });
-    },
-    function (callback) {
-      console.log("Running Garbage collector. Please wait..");
-      ipfs.repo.gc(function (err, res) {
-        if (!err) {
-          console.log("Garbade collector done")
-        }
-        else {
-          console.log(err);
-        }
-      });
-
+remove = async function (metadata) {
+  try {
+    console.log("Metadata", metadata);
+    for (let mi=0; mi<metadata.length; mi++) {
+      const el = metadata[mi];
+      const pinset = await ipfs.pin.rm(el.pinset, {recursive: true});
+      console.log(pinset[0].hash + " removed");
     }
-  ]);
 
+    let metadata_store = db.getSync("metadata_store");
+    const possibleError = metadata_store.toString();
+    if (possibleError !== "Error: could not load data") {
+      for (let mi=0; mi<metadata.length; mi++) {
+        let el = metadata[mi];
+        metadata_store = metadata_store.filter(function(re) {
+          return re.pinset != el.pinset
+        });
+      }
+    }
+
+    db.saveSync("metadata_store", metadata_store);
+
+    console.log("Running Garbage collector. Please wait..");
+    await ipfs.repo.gc();
+    console.log("Garbade collector done")
+
+  } catch(err) {
+    console.log("[err][remove]", err);
+  }
 }
 
 /**
