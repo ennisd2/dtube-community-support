@@ -2,13 +2,11 @@ const steem = require('steem');
 var config = require('config.json')('./config.json');
 var ipfsAPI = require('ipfs-api');
 var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var Store = require("jfs");
 const { createClient } = require('lightrpc');
 const bluebird = require('bluebird');
 var Store = require("jfs");
 var db = new Store("./data");
 const { spawn } = require('child_process');
-
 
 const rotate = require('rotate-log');
 const logger = rotate({
@@ -23,6 +21,7 @@ var stream = require('../actions/stream.js');
 var cur_node_index = 0;
 var lightrpc = createClient(config.rpc_nodes[cur_node_index]);
 bluebird.promisifyAll(lightrpc);
+bluebird.promisifyAll(db);
 
 // those var are used to print 'block' logs each X minutes 
 var block_processed = 0;
@@ -43,7 +42,7 @@ function failover() {
   if(config.rpc_nodes && config.rpc_nodes.length > 1) {
     cur_node_index += 1;
 
-    if(cur_node_index == config.rpc_nodes.length)
+      if(cur_node_index == config.rpc_nodes.length)
       cur_node_index = 0;
 
     var rpc_node = config.rpc_nodes[cur_node_index];
@@ -70,82 +69,88 @@ function checkIPFS(cb) {
 }
 exports.checkIPFS = checkIPFS;
 
-function checkSize(metadata,cbSize) {
-  console.log("Try to find seed for : ",metadata.pinset)
-  // launch go-ipfs ls pinset command
-  var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
+exports.checkSize = checkSize;
 
-  var timeout = setTimeout(function() {
-    // Kill child process if "ipfs ls" takes too long to respond
-    ipfsLsProcess.stdin.pause();
-    ipfsLsProcess.kill('SIGINT');
-  }, LSTIMEOUT);
+function checkSize(metadata) {
+  return new Promise(function(resolve, reject) {
+    console.log("Try to find seed for : ", metadata.pinset)
 
-  ipfsLsProcess.stderr.on('data', (data) => {
-    if(data.toString()!="Error: api not running\n") {
-      // No response from ipfs ls. Pass to the next pinset
-      console.log('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
-      cbSize(true);
-    }
-    else {
-      // IPFS is not running. Stop the script (with callback of main waterfall)
-      console.log("IPFS is not running")
-      clearTimeout(timeout)
-    }
-  });
-  ipfsLsProcess.stdout.on('data', (data) => {
-    // calcul contente size
-    if(data.toString()!='\n') {
-      var size = 0;
-      part = data.toString().split('\n');
-      part=part.filter(function(el){return el!=='';});
-      part.forEach(element => {
+    // launch go-ipfs ls pinset command
+    var ipfsLsProcess = spawn('ipfs',['ls', metadata.pinset]);
+
+    var timeout = setTimeout(function() {
+      // Kill child process if "ipfs ls" takes too long to respond
+      ipfsLsProcess.stdin.pause();
+      ipfsLsProcess.kill('SIGINT');
+    }, LSTIMEOUT);
+
+    ipfsLsProcess.stderr.on('data', (data) => {
+      console.log(data.toString());
+      const response = data.toString();
+
+      if(response.indexOf("Error") !== -1) {
+        // No response from ipfs ls. Pass to the next pinset
+        reject('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
+      }
+      else {
+        // IPFS is not running. Stop the script (with callback of main waterfall)
+        clearTimeout(timeout);
+        reject("IPFS is not running");
+      }
+    });
+
+    ipfsLsProcess.stdout.on('data', (data) => {
+      // calcul contente size
+      if(data.toString()!='\n') {
+        var size = 0;
+        part = data.toString().split('\n');
+        part=part.filter(function(el){return el!=='';});
+        part.forEach(element => {
           size += Number(element.split(" ")[1]);
-      });
-      ipfs.repo.stat((err,stats) => {
-        if(stats.storageMax > Number(stats.repoSize) + size) {
+        });
+        ipfs.repo.stat((err,stats) => {
+          // Prevent to kill another process (using the last "ipfs ls" pid )
+          clearTimeout(timeout);
+
+          if(stats.storageMax > Number(stats.repoSize) + size) {
             // erase 'size' in metadata
             metadata.size=size;
             // pass callback of main waterfall in order to stop script if ipfs daemon is stopped during "pin add" process
-            cbSize(null,metadata)
-        }
-        else
-        {
-            console.log("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
-            cbSize(true);
-        }
-      });
-      // Prevent to kill another process (using the last "ipfs ls" pid )
-      clearTimeout(timeout);
-
-    }
-  })
+            resolve(metadata);
+          }
+          else
+          {
+            reject("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
+          }
+        });
+      }
+    });
+  });
 }
 
-exports.checkSize = checkSize;
-
-exports.ifExistInDB = function(input,cb) {
+exports.ifExistInDB = function(input, cb) {
   // verify if pinset already store in DB
-  db = new Store("./data");
-  db.get("metadata_store", function(err, metadata_store){
-    if(!err)
-    {
-   
-      if(metadata_store.some(function(r){return r.pinset===input.pinset})) {
+  try {
+    metadata_store = db.getSync("metadata_store");
+    const possibleError = metadata_store.toString();
+    if (possibleError === "Error: could not load data") {
+      return false;
+    } else {
+      if(metadata_store.some(function(r) {return r.pinset===input.pinset})) {
+        if (typeof cb !== "undefined") {
+          cb(null, input, true);
+        }
+        return true;
+      }
+    }
+  } catch(err) {
+    console.log("[err][ifExistInDb]", err);
+  }
 
-        exist=true;
-      }
-      else
-      {
-        exist=false;
-      }
-    }
-    else
-    {
-      exist=false;
-    }
-    cb(null,input,exist);
-  });
+  if (typeof cb !== "undefined") {
+    cb(null, input, false);
+  }
+  return false;
 }
 
 function catchup(blockNumber) {

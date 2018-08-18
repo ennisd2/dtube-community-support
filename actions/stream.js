@@ -205,7 +205,7 @@ function checkSize(metadata,cbSize) {
 	logger.error("Try to find seed for : ",metadata.pinset)
 	// launch go-ipfs ls pinset command
 	var ipfsLsProcess=spawn('ipfs',['ls',metadata.pinset]);
-  
+
 	var timeout = setTimeout(function() {
 		save = save.filter(function(el){return el!==metadata.pinset;});
 
@@ -214,11 +214,11 @@ function checkSize(metadata,cbSize) {
 		ipfsLsProcess.kill('SIGINT');
 
 	}, LSTIMEOUT);
-  
+
 	ipfsLsProcess.stderr.on('data', (data) => {
 	  if(data.toString()!="Error: api not running\n") {
 		// No response from ipfs ls. Pass to the next pinset
-		logger.info('scannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
+		logger.info('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
 		// delete entrie in temp 'save' var
 		save = save.filter(function(el){return el!==metadata.pinset;});
 
@@ -252,10 +252,10 @@ function checkSize(metadata,cbSize) {
 		  }
 		  else
 		  {
-			  
+
 			  logger.error("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
 			  logger.info("repo size : " + Number(stats.repoSize));
-			  // delete entrie in temp 'save' var 
+			  // delete entrie in temp 'save' var
 			  save = save.filter(function(el){return el!==metadata.pinset;});
 			  size_tmp-=size;
 			  cbSize(true);
@@ -263,7 +263,7 @@ function checkSize(metadata,cbSize) {
 		});
 		// Prevent to kill another process (using the last "ipfs ls" pid )
 		clearTimeout(timeout);
-  
+
 	  }
 	})
   }
