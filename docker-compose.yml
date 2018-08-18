@@ -1,6 +1,9 @@
 version: "3"
 services:
   ipfs:
+    build:
+      dockerfile: Dockerfile.ipfs
+      context: .
     container_name: "ipfs"
     expose:
       - 4001
@@ -9,14 +12,17 @@ services:
       - 4001:4001
       - 5001:5001
       - 8090:8090
-    image: ipfs/go-ipfs
     volumes:
       - ./data:/data/ipfs/
+    networks:
+      - ipfs-network
     command: daemon --routing=dhtclient --enable-gc
     restart: always
 
   dcs:
-    build: .
+    build:
+      dockerfile: Dockerfile.dcs
+      context: .
     container_name: dcs
     volumes:
       - ./data:/opt/dcs/data
@@ -29,3 +35,6 @@ services:
       - ipfs
     restart: always
 
+networks:
+  ipfs-network:
+    driver: bridge
