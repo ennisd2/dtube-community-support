@@ -4,6 +4,9 @@ WORKDIR /usr/local/src
 RUN wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
 RUN tar xvzf go-ipfs_v0.4.17_linux-amd64.tar.gz
 
+RUN apt update
+RUN apt install vim -y
+
 WORKDIR /usr/local/src/go-ipfs/
 RUN sh install.sh
 

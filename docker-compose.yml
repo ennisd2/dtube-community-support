@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
       context: .
     container_name: dcs
+    environment:
+      - IPFS_PATH=/opt/dcs/data
     expose:
       - 4001
       - 8080
@@ -13,12 +15,12 @@ services:
       - 5001:5001
       - 8090:8090
     volumes:
-      - ./data:/opt/dcs/data
-      - ./log:/opt/dcs/log
-      - ./docker:/opt/dcs/docker
-      - ./utils:/opt/dcs/utils
-      - ./actions:/opt/dcs/actions
-      - ./index.js:/opt/dcs/index.js
+      - ./data:/opt/dcs/data:delegated
+      - ./log:/opt/dcs/log:delegated
+      - ./docker:/opt/dcs/docker:delegated
+      - ./utils:/opt/dcs/utils:delegated
+      - ./actions:/opt/dcs/actions:delegated
+      - ./index.js:/opt/dcs/index.js:delegated
     working_dir: /opt/dcs
     command: sh ./docker/run.sh
     networks:
