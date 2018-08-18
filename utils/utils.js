@@ -101,7 +101,7 @@ function checkSize(metadata) {
 
       if (response.indexOf("Error") !== -1) {
         // No response from ipfs ls. Pass to the next pinset
-        reject('cannot fetch (', metadata.pinset, ') size in : ', LSTIMEOUT / 1000, ' seconds');
+        reject('cannot fetch (' + metadata.pinset + ') size in : ' + LSTIMEOUT / 1000 + ' seconds');
       }
       else {
         // IPFS is not running. Stop the script (with callback of main waterfall)
