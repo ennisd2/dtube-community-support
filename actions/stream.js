@@ -6,24 +6,14 @@ var Store = require("jfs");
 var async = require("async");
 const { spawn } = require('child_process');
 
-var winston = require('winston');
-require('winston-daily-rotate-file');
-
 var utils = require('../utils/utils.js');
 
-var transport = new (winston.transports.DailyRotateFile)({
-    filename: 'log/application-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: false,
-    maxSize: '20m',
-    maxFiles: '14d'
-  });
-
-var logger = new (winston.Logger)({
-    transports: [
-      transport
-    ]
-  });
+const rotate = require('rotate-log');
+const logger = rotate({
+  name: 'application',
+  path: 'log',
+  pattern: '.yyyy-MM-dd.log'
+});
 
 
 //used to listen only dtube publication.
@@ -228,7 +218,7 @@ function checkSize(metadata,cbSize) {
 	ipfsLsProcess.stderr.on('data', (data) => {
 	  if(data.toString()!="Error: api not running\n") {
 		// No response from ipfs ls. Pass to the next pinset
-		logger.info('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
+		logger.info('scannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
 		// delete entrie in temp 'save' var
 		save = save.filter(function(el){return el!==metadata.pinset;});
 

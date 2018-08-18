@@ -10,23 +10,12 @@ var db = new Store("./data");
 const { spawn } = require('child_process');
 
 
-
-var winston = require('winston');
-require('winston-daily-rotate-file');
-
-var transport = new (winston.transports.DailyRotateFile)({
-    filename: 'log/application-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: false,
-    maxSize: '20m',
-    maxFiles: '14d'
-  });
-
-var logger = new (winston.Logger)({
-    transports: [
-      transport
-    ]
-  });
+const rotate = require('rotate-log');
+const logger = rotate({
+  name: 'application',
+  path: 'log',
+  pattern: '.yyyy-MM-dd.log'
+});
 
 var stream = require('../actions/stream.js');
 

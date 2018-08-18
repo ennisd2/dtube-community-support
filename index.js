@@ -9,9 +9,6 @@ const bluebird = require('bluebird');
 
 
 var async = require("async");
-var winston = require('winston');
-require('winston-daily-rotate-file');
-
 var utils = require('./utils/utils.js');
 
 // set rpc node
@@ -21,21 +18,12 @@ bluebird.promisifyAll(lightrpc);
 bluebird.promisifyAll(db);
 bluebird.promisifyAll(utils);
 
-
-
-var transport = new (winston.transports.DailyRotateFile)({
-    filename: 'log/application-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: false,
-    maxSize: '20m',
-    maxFiles: '14d'
-  });
-
-var logger = new (winston.Logger)({
-    transports: [
-      transport
-    ]
-  });
+const rotate = require('rotate-log');
+const logger = rotate({
+  name: 'application',
+  path: 'log',
+  pattern: '.yyyy-MM-dd.log'
+});
 
 let args = require('parse-cli-arguments')({
     options: {
@@ -43,8 +31,6 @@ let args = require('parse-cli-arguments')({
         blockNumber: { alias: 'b' },
     }
 });
-
-
 
 function start() {
   utils.checkIPFSAsync();
