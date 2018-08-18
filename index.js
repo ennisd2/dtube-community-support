@@ -4,7 +4,7 @@ var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 var config = require('config.json')('./config.json');
 var Store = require("jfs");
 var db = new Store("data");
-const { createClient } = require('lightrpc');
+const {createClient} = require('lightrpc');
 const bluebird = require('bluebird');
 
 
@@ -26,24 +26,23 @@ const logger = rotate({
 });
 
 let args = require('parse-cli-arguments')({
-    options: {
+  options: {
 
-        blockNumber: { alias: 'b' },
-    }
+    blockNumber: {alias: 'b'},
+  }
 });
 
 function start() {
   utils.checkIPFSAsync();
 
-  if(args.blockNumber!=undefined) {
+  if (args.blockNumber != undefined) {
     // take blockNumber passed thought argument
     logger.info("Start Dtube Community Support at block : " + args.blockNumber);
     utils.catchup(Number(args.blockNumber));
   }
-  else
-  {
+  else {
     var state = db.getAsync("block_state");
-    state.then(result=> {
+    state.then(result => {
       // Start from the last block number stored in JFS DB
       logger.info("Start Dtube Community Support at block : " + result.blockNumber);
       utils.catchup(Number(result.blockNumber));
@@ -54,11 +53,11 @@ function start() {
         utils.catchup(result.head_block_number);
       }).catch(err => {
         // retry with another node
-       logger.error('Call failed with lightrpc : ', err.message);
-       failover();
-       bluebird.delay(5000).then(function() {
-         return start();
-       })
+        logger.error('Call failed with lightrpc : ', err.message);
+        failover();
+        bluebird.delay(5000).then(function () {
+          return start();
+        })
       });
     });
   }
@@ -68,15 +67,15 @@ start();
 
 function failover() {
   // failover function
-  if(config.rpc_nodes && config.rpc_nodes.length > 1) {
+  if (config.rpc_nodes && config.rpc_nodes.length > 1) {
     cur_node_index += 1;
 
-    if(cur_node_index == config.rpc_nodes.length)
+    if (cur_node_index == config.rpc_nodes.length)
       cur_node_index = 0;
 
     var rpc_node = config.rpc_nodes[cur_node_index];
 
-    
+
     lightrpc = createClient(rpc_node);
     bluebird.promisifyAll(lightrpc);
     logger.warn('Failing over to: ' + rpc_node);

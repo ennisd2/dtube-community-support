@@ -12,84 +12,80 @@ var utils = require('../utils/utils.js');
 const dtube_regex = /([a-z][a-z\d.-]{1,14}[a-z\d])\/([a-z\d-]+)\/?$/mg;
 
 let args = require('parse-cli-arguments')({
-    options: {
-      dtube_url: { alias: 'u' },
-      author: {alias: 'a'}
-    }
+  options: {
+    dtube_url: {alias: 'u'},
+    author: {alias: 'a'}
+  }
 });
 
 /**
  * Main function
  */
 function addMain() {
-	try {
-		if((args.author==undefined && args.dtube_url==undefined ) || (args.author==true || args.dtube_url==true)) throw new Error("Please use add wth -a (add author) or -y (add dtube url)")
-		if(args.author!=undefined) addAuthor();
-		if(args.dtube_url!=undefined) addURL();
-	}
-	catch(err)
-	{
-		console.log(err.message)
-	}
+  try {
+    if ((args.author == undefined && args.dtube_url == undefined) || (args.author == true || args.dtube_url == true)) throw new Error("Please use add wth -a (add author) or -y (add dtube url)")
+    if (args.author != undefined) addAuthor();
+    if (args.dtube_url != undefined) addURL();
+  }
+  catch (err) {
+    console.log(err.message)
+  }
 }
 
-exports.addMain=addMain;
+exports.addMain = addMain;
 
 /**
  * Add an author
  */
 function addAuthor() {
-	try
-	{
-		var author = args.author;
-		console.log("Try to pin all dtube content for : ",author) 
-		async.waterfall([
-			utils.getBlogAuthor.bind(null,author),
-			utils.getDtubeContent,
-			function(blog,cb) {
-				async.eachLimit(blog,1,function(post,eachCB) {
-					addPin(author,post.comment.permlink,eachCB);
-				})
-			}
+  try {
+    var author = args.author;
+    console.log("Try to pin all dtube content for : ", author)
+    async.waterfall([
+      utils.getBlogAuthor.bind(null, author),
+      utils.getDtubeContent,
+      function (blog, cb) {
+        async.eachLimit(blog, 1, function (post, eachCB) {
+          addPin(author, post.comment.permlink, eachCB);
+        })
+      }
 
-		])
-	}
-	catch(err)
-	{
-		console.log(err.message)
-	}
+    ])
+  }
+  catch (err) {
+    console.log(err.message)
+  }
 }
 
 /**
  * Add a URL
  */
 function addURL() {
-	// Get author and permlink (used by steem.api.getContent)
-	while ((m = dtube_regex.exec(args.dtube_url)) !== null) {
-	    if (m.index === dtube_regex.lastIndex) {
-	        regex.lastIndex++;
-	    }
-	    var author = m[1];
-		var permlink = m[2];
+  // Get author and permlink (used by steem.api.getContent)
+  while ((m = dtube_regex.exec(args.dtube_url)) !== null) {
+    if (m.index === dtube_regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    var author = m[1];
+    var permlink = m[2];
 
-	}
+  }
 
-	addPin(author,permlink);
+  addPin(author, permlink);
 }
 
 async function fetchMetadataFromSteem(author, permlink) {
   try {
-    let result = await steem.api.getContentAsync(author,permlink);
+    let result = await steem.api.getContentAsync(author, permlink);
     // try to find ipfs hash (480p or source) in json_metadata
-    if(result.id!=0) {
-      if(result.json_metadata!='{}' && result.json_metadata!="") {
+    if (result.id != 0) {
+      if (result.json_metadata != '{}' && result.json_metadata != "") {
         var metadata = {};
         json_metadata = JSON.parse(result.json_metadata);
-        if(json_metadata.video.content.video480hash!=undefined && json_metadata.video.content.video480hash!="") {
+        if (json_metadata.video.content.video480hash != undefined && json_metadata.video.content.video480hash != "") {
           var videohash = json_metadata.video.content.video480hash;
         }
-        else
-        {
+        else {
           var videohash = json_metadata.video.content.videohash;
 
         }
@@ -105,16 +101,14 @@ async function fetchMetadataFromSteem(author, permlink) {
 
         return metadata;
       }
-      else
-      {
+      else {
         console.log("invalid metadata in post");
       }
     }
-    else
-    {
+    else {
       console.log("dtube video doest not exist");
     }
-  } catch(err) {
+  } catch (err) {
     console.log("Cannot connect to steem api");
     console.log(err);
   }
@@ -137,9 +131,9 @@ async function pinMedia(metadata) {
 
       var size = 0;
 
-      const parts =await ipfs.ls(metadata.pinset);
+      const parts = await ipfs.ls(metadata.pinset);
 
-      parts.forEach(function(part) {
+      parts.forEach(function (part) {
         size += part.size;
       });
 
@@ -155,7 +149,7 @@ async function pinMedia(metadata) {
 
       return true;
     }
-  } catch(err) {
+  } catch (err) {
     console.log("[err][pinmedia]", err);
   }
 
@@ -169,16 +163,16 @@ async function pinMedia(metadata) {
  * @param cbAdd
  * @returns {Promise<boolean>}
  */
-async function addPin(author,permlink) {
+async function addPin(author, permlink) {
   const metadata = await fetchMetadataFromSteem(author, permlink);
   if (metadata === null) {
     return false;
   }
 
-	if(utils.ifExistInDB(metadata)) {
+  if (utils.ifExistInDB(metadata)) {
     console.log(metadata.pinset + " already exist in db. skip it")
-		return false;
-	}
+    return false;
+  }
 
   const pinned = await pinMedia(metadata);
   if (pinned === false) {
@@ -186,7 +180,7 @@ async function addPin(author,permlink) {
     return false;
   }
 
-  if(utils.ifExistInDB(metadata)) {
+  if (utils.ifExistInDB(metadata)) {
     return true;
   } else {
     metadata_store = db.getSync("metadata_store");
@@ -197,9 +191,9 @@ async function addPin(author,permlink) {
 
     metadata_store.push(metadata);
 
-    await db.save("metadata_store", metadata_store, function(err){
+    await db.save("metadata_store", metadata_store, function (err) {
       console.log("############# " + metadata.pinset + " metadata stored");
       return true;
     });
-	}
+  }
 }

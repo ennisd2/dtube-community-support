@@ -2,11 +2,11 @@ const steem = require('steem');
 var config = require('config.json')('./config.json');
 var ipfsAPI = require('ipfs-api');
 var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-const { createClient } = require('lightrpc');
+const {createClient} = require('lightrpc');
 const bluebird = require('bluebird');
 var Store = require("jfs");
 var db = new Store("./data");
-const { spawn } = require('child_process');
+const {spawn} = require('child_process');
 
 const rotate = require('rotate-log');
 const logger = rotate({
@@ -39,15 +39,15 @@ var DTUBE_APP = config.dtube_app;
 
 function failover() {
   // failover function
-  if(config.rpc_nodes && config.rpc_nodes.length > 1) {
+  if (config.rpc_nodes && config.rpc_nodes.length > 1) {
     cur_node_index += 1;
 
-      if(cur_node_index == config.rpc_nodes.length)
+    if (cur_node_index == config.rpc_nodes.length)
       cur_node_index = 0;
 
     var rpc_node = config.rpc_nodes[cur_node_index];
 
-    
+
     lightrpc = createClient(rpc_node);
     bluebird.promisifyAll(lightrpc);
     logger.warn('Failing over to: ' + rpc_node);
@@ -57,28 +57,28 @@ function failover() {
 exports.failover = failover;
 
 function checkIPFS(cb) {
-  ipfs.version(function(err,version) {
-    if(err) 
-    { 
-      console.log("IPFS is not running ?",err.message); 
+  ipfs.version(function (err, version) {
+    if (err) {
+      console.log("IPFS is not running ?", err.message);
       process.exit();
       cb(true);
     }
     else cb(null);
   });
 }
+
 exports.checkIPFS = checkIPFS;
 
 exports.checkSize = checkSize;
 
 function checkSize(metadata) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     console.log("Try to find seed for : ", metadata.pinset)
 
     // launch go-ipfs ls pinset command
-    var ipfsLsProcess = spawn('ipfs',['ls', metadata.pinset]);
+    var ipfsLsProcess = spawn('ipfs', ['ls', metadata.pinset]);
 
-    var timeout = setTimeout(function() {
+    var timeout = setTimeout(function () {
       // Kill child process if "ipfs ls" takes too long to respond
       ipfsLsProcess.stdin.pause();
       ipfsLsProcess.kill('SIGINT');
@@ -88,9 +88,9 @@ function checkSize(metadata) {
       console.log(data.toString());
       const response = data.toString();
 
-      if(response.indexOf("Error") !== -1) {
+      if (response.indexOf("Error") !== -1) {
         // No response from ipfs ls. Pass to the next pinset
-        reject('cannot fetch (',metadata.pinset,') size in : ',LSTIMEOUT/1000,' seconds');
+        reject('cannot fetch (', metadata.pinset, ') size in : ', LSTIMEOUT / 1000, ' seconds');
       }
       else {
         // IPFS is not running. Stop the script (with callback of main waterfall)
@@ -101,26 +101,27 @@ function checkSize(metadata) {
 
     ipfsLsProcess.stdout.on('data', (data) => {
       // calcul contente size
-      if(data.toString()!='\n') {
+      if (data.toString() != '\n') {
         var size = 0;
         part = data.toString().split('\n');
-        part=part.filter(function(el){return el!=='';});
+        part = part.filter(function (el) {
+          return el !== '';
+        });
         part.forEach(element => {
           size += Number(element.split(" ")[1]);
         });
-        ipfs.repo.stat((err,stats) => {
+        ipfs.repo.stat((err, stats) => {
           // Prevent to kill another process (using the last "ipfs ls" pid )
           clearTimeout(timeout);
 
-          if(stats.storageMax > Number(stats.repoSize) + size) {
+          if (stats.storageMax > Number(stats.repoSize) + size) {
             // erase 'size' in metadata
-            metadata.size=size;
+            metadata.size = size;
             // pass callback of main waterfall in order to stop script if ipfs daemon is stopped during "pin add" process
             resolve(metadata);
           }
-          else
-          {
-            reject("not enough space. Increase datastore size --current " + Number(stats.storageMax/1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
+          else {
+            reject("not enough space. Increase datastore size --current " + Number(stats.storageMax / 1000000000).toFixed(2) + " GB-- (.ipfs/config) or delete content (npm run rm -- -p=pinset)");
           }
         });
       }
@@ -128,7 +129,7 @@ function checkSize(metadata) {
   });
 }
 
-exports.ifExistInDB = function(input, cb) {
+exports.ifExistInDB = function (input, cb) {
   // verify if pinset already store in DB
   try {
     metadata_store = db.getSync("metadata_store");
@@ -136,14 +137,16 @@ exports.ifExistInDB = function(input, cb) {
     if (possibleError === "Error: could not load data") {
       return false;
     } else {
-      if(metadata_store.some(function(r) {return r.pinset===input.pinset})) {
+      if (metadata_store.some(function (r) {
+        return r.pinset === input.pinset
+      })) {
         if (typeof cb !== "undefined") {
           cb(null, input, true);
         }
         return true;
       }
     }
-  } catch(err) {
+  } catch (err) {
     console.log("[err][ifExistInDb]", err);
   }
 
@@ -154,7 +157,7 @@ exports.ifExistInDB = function(input, cb) {
 }
 
 function catchup(blockNumber) {
-  
+
 
   lightrpc.sendAsync('get_ops_in_block', [blockNumber, false]).then(ops => {
     if (!ops.length) {
@@ -163,39 +166,39 @@ function catchup(blockNumber) {
       lightrpc.sendAsync('get_block', [blockNumber]).then(block => {
         if (block && block.transactions.length === 0) {
           // save block number in JFS DB
-          if(block_processed % save_block_each_time == 0) {
+          if (block_processed % save_block_each_time == 0) {
             saveBlockState(blockNumber);
           }
           //console.log('Block exist and is empty, load next', blockNumber);
-          if(block_processed % log_block_each_time == 0) {
-            logger.info('At block : ',blockNumber, ' timestamp ',block.timestamp)
+          if (block_processed % log_block_each_time == 0) {
+            logger.info('At block : ', blockNumber, ' timestamp ', block.timestamp)
           }
 
-          block_processed +=1;
+          block_processed += 1;
           return catchup(blockNumber + 1);
         } else {
           //block does not exist
           //console.log('Retry', blockNumber);
-          bluebird.delay(5000).then(function() {
+          bluebird.delay(5000).then(function () {
             return catchup(blockNumber);
           });
         }
       }).catch(err => {
         //console.log('Retry', blockNumber);
-        bluebird.delay(5000).then(function() {
+        bluebird.delay(5000).then(function () {
           return catchup(blockNumber);
         });
       });
     } else {
       //console.log('Block loaded', blockNumber);
       // save block number in JFS DB
-      if(block_processed % save_block_each_time == 0) {
+      if (block_processed % save_block_each_time == 0) {
         saveBlockState(blockNumber);
       }
-      if(block_processed % log_block_each_time == 0) {
-        logger.info('At block : ',blockNumber, ' timestamp ',ops[0].timestamp)
+      if (block_processed % log_block_each_time == 0) {
+        logger.info('At block : ', blockNumber, ' timestamp ', ops[0].timestamp)
       }
-      block_processed +=1;
+      block_processed += 1;
       // Process the block and search dtube content
       stream.streamOps(ops);
 
@@ -203,11 +206,11 @@ function catchup(blockNumber) {
     }
   }).catch(err => {
     logger.error('Call failed with lightrpc : ', err.message);
-    
+
     // try another node
     failover();
     //console.log('Retry', blockNumber);
-    bluebird.delay(5000).then(function() {
+    bluebird.delay(5000).then(function () {
       return catchup(blockNumber);
     })
 
@@ -221,36 +224,40 @@ function saveBlockState(blockNumber) {
   db.save("block_state", state);
 }
 
-function getBlogAuthor(author,cb) {
+function getBlogAuthor(author, cb) {
   //Return all last 500 publications (except resteem)
-  lightrpc.sendAsync('condenser_api.get_blog', [author,0,500]).then(blog => {
-    blog = blog.filter(function(el){return el.comment.author===author;});
-    cb(null,blog)
+  lightrpc.sendAsync('condenser_api.get_blog', [author, 0, 500]).then(blog => {
+    blog = blog.filter(function (el) {
+      return el.comment.author === author;
+    });
+    cb(null, blog)
   }).catch(err => {
     console.log(err)
     cb(true);
   })
 }
-exports.getBlogAuthor=getBlogAuthor;
-function getDtubeContent(blog,cb) {
+
+exports.getBlogAuthor = getBlogAuthor;
+
+function getDtubeContent(blog, cb) {
   // Find dtube content in the blog
   var dtubeBlog = [];
-  try{
+  try {
     blog.forEach((post) => {
       // test if json_metadata can be parsed 
-      json_metadata = JSON.parse(post.comment.json_metadata);    
+      json_metadata = JSON.parse(post.comment.json_metadata);
       // test if json_metadata is an object
-      if(!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
-      if (json_metadata.app =='{}') throw new Error('Bad format format : json_metadata.app')
-      if (json_metadata.app=="") throw new Error("json_metadata.app is empty");
-      
+      if (!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
+      if (json_metadata.app == '{}') throw new Error('Bad format format : json_metadata.app')
+      if (json_metadata.app == "") throw new Error("json_metadata.app is empty");
+
       if (json_metadata.app.includes(DTUBE_APP)) {
         dtubeBlog.push(post)
       }
     })
-    cb(null,dtubeBlog);
+    cb(null, dtubeBlog);
   }
-  catch(err) {
+  catch (err) {
     cb(true)
   }
 }
