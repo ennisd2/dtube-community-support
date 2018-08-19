@@ -1,5 +1,5 @@
 const steem = require('steem');
-const config = require('config.json')('./config.json');
+const config = require('../config.json');
 const ipfsAPI = require('ipfs-api');
 const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 const {createClient} = require('lightrpc');
@@ -248,17 +248,18 @@ function saveBlockState(blockNumber) {
  * @param author
  * @param cb
  */
-function getBlogAuthor(author, cb) {
-  //Return all last 500 publications (except resteem)
-  lightrpc.sendAsync('condenser_api.get_blog', [author, 0, 500]).then(blog => {
+async function getBlogAuthor(author) {
+  try {
+    //Return all last 500 publications (except resteem)
+    let blog = await lightrpc.sendAsync('condenser_api.get_blog', [author, 0, 500]);
     blog = blog.filter(function (el) {
       return el.comment.author === author;
     });
-    cb(null, blog)
-  }).catch(err => {
-    console.log(err)
-    cb(true);
-  })
+
+    return blog;
+  } catch(err) {
+    console.log("[err][getblogauthor]", err);
+  }
 }
 
 exports.getBlogAuthor = getBlogAuthor;
@@ -268,27 +269,31 @@ exports.getBlogAuthor = getBlogAuthor;
  * @param blog
  * @param cb
  */
-function getDtubeContent(blog, cb) {
-  // Find dtube content in the blog
-  var dtubeBlog = [];
-  try {
-    blog.forEach((post) => {
-      // test if json_metadata can be parsed 
-      json_metadata = JSON.parse(post.comment.json_metadata);
-      // test if json_metadata is an object
-      if (!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
-      if (json_metadata.app == '{}') throw new Error('Bad format format : json_metadata.app')
-      if (json_metadata.app == "") throw new Error("json_metadata.app is empty");
+function getDtubeContent(blog) {
+  return new Promise(function(resolve, reject) {
+    // Find dtube content in the blog
+    var dtubeBlog = [];
 
-      if (json_metadata.app.includes(DTUBE_APP)) {
-        dtubeBlog.push(post)
-      }
-    })
-    cb(null, dtubeBlog);
-  }
-  catch (err) {
-    cb(true)
-  }
+    try {
+      blog.forEach((post) => {
+        // test if json_metadata can be parsed
+        json_metadata = JSON.parse(post.comment.json_metadata);
+        // test if json_metadata is an object
+        if (!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
+        if (json_metadata.app == '{}') throw new Error('Bad format format : json_metadata.app')
+        if (json_metadata.app == "") throw new Error("json_metadata.app is empty");
+
+        if (json_metadata.app.includes(DTUBE_APP)) {
+          dtubeBlog.push(post)
+        }
+      })
+
+      resolve(dtubeBlog);
+    }
+    catch (err) {
+      reject(err);
+    }
+  });
 }
 
 exports.getDtubeContent = getDtubeContent;

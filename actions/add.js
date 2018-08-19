@@ -37,23 +37,21 @@ exports.addMain = addMain;
 /**
  * Add an author
  */
-function addAuthor() {
+async function addAuthor() {
   try {
     var author = args.author;
-    console.log("Try to pin all dtube content for : ", author)
-    async.waterfall([
-      utils.getBlogAuthor.bind(null, author),
-      utils.getDtubeContent,
-      function (blog, cb) {
-        async.eachLimit(blog, 1, function (post, eachCB) {
-          addPin(author, post.comment.permlink, eachCB);
-        })
-      }
+    console.log("Try to pin all dtube content for : ", author);
 
-    ])
+    let blog = await utils.getBlogAuthor(author);
+    blog = await utils.getDtubeContent(blog);
+
+    // Pin author's latest item
+    if (blog instanceof Array) {
+      addPin(author, blog[0].comment.permlink);
+    }
   }
   catch (err) {
-    console.log(err.message)
+    console.log("[addAuthor]", err.message);
   }
 }
 
