@@ -60,7 +60,7 @@ async function addURL() {
   // Get author and permlink (used by steem.api.getContent)
   while ((m = dtube_regex.exec(args.dtube_url)) !== null) {
     if (m.index === dtube_regex.lastIndex) {
-      regex.lastIndex++;
+      dtube_regex.lastIndex++;
     }
     author = m[1];
     permlink = m[2];
