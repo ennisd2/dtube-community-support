@@ -1,14 +1,9 @@
 const steem = require('steem');
 const ipfsAPI = require('ipfs-api');
 const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-const config = require('config.json')('./../config.json');
 const Store = require("jfs");
 const db = new Store("./data");
-const async = require("async");
-
-const list = require('./list.js');
 const utils = require('../utils/utils.js');
-
 const dtube_regex = /([a-z][a-z\d.-]{1,14}[a-z\d])\/([a-z\d-]+)\/?$/mg;
 
 const args = require('parse-cli-arguments')({
@@ -21,11 +16,12 @@ const args = require('parse-cli-arguments')({
 /**
  * Main function
  */
-function addMain() {
+async function addMain() {
   try {
-    if ((args.author == undefined && args.dtube_url == undefined) || (args.author == true || args.dtube_url == true)) throw new Error("Please use add wth -a (add author) or -y (add dtube url)")
-    if (args.author != undefined) addAuthor();
-    if (args.dtube_url != undefined) addURL();
+    if ((args.author === undefined && args.dtube_url === undefined) || (args.author === true || args.dtube_url === true))
+      throw new Error("Please use add wth -a (add author) or -y (add dtube url)");
+    if (args.author !== undefined) await addAuthor();
+    if (args.dtube_url !== undefined) await addURL();
   }
   catch (err) {
     console.log(err.message)
@@ -39,7 +35,7 @@ exports.addMain = addMain;
  */
 async function addAuthor() {
   try {
-    var author = args.author;
+    let author = args.author;
     console.log("Try to pin all dtube content for : ", author);
 
     let blog = await utils.getBlogAuthor(author);
@@ -47,7 +43,7 @@ async function addAuthor() {
 
     // Pin author's latest item
     if (blog instanceof Array) {
-      addPin(author, blog[0].comment.permlink);
+      await addPin(author, blog[0].comment.permlink);
     }
   }
   catch (err) {
@@ -58,18 +54,19 @@ async function addAuthor() {
 /**
  * Add a URL
  */
-function addURL() {
+async function addURL() {
+  let author, permlink;
+
   // Get author and permlink (used by steem.api.getContent)
   while ((m = dtube_regex.exec(args.dtube_url)) !== null) {
     if (m.index === dtube_regex.lastIndex) {
       regex.lastIndex++;
     }
-    var author = m[1];
-    var permlink = m[2];
-
+    author = m[1];
+    permlink = m[2];
   }
 
-  addPin(author, permlink);
+  await addPin(author, permlink);
 }
 
 /**
@@ -82,16 +79,17 @@ async function fetchMetadataFromSteem(author, permlink) {
   try {
     let result = await steem.api.getContentAsync(author, permlink);
     // try to find ipfs hash (480p or source) in json_metadata
-    if (result.id != 0) {
-      if (result.json_metadata != '{}' && result.json_metadata != "") {
-        var metadata = {};
-        json_metadata = JSON.parse(result.json_metadata);
-        if (json_metadata.video.content.video480hash != undefined && json_metadata.video.content.video480hash != "") {
-          var videohash = json_metadata.video.content.video480hash;
+    if (result.id !== 0) {
+      if (result.json_metadata !== '{}' && result.json_metadata !== "") {
+        let metadata = {};
+        let json_metadata = JSON.parse(result.json_metadata);
+        let videohash;
+
+        if (json_metadata.video.content.video480hash !== undefined && json_metadata.video.content.video480hash !== "") {
+          videohash = json_metadata.video.content.video480hash;
         }
         else {
-          var videohash = json_metadata.video.content.videohash;
-
+          videohash = json_metadata.video.content.videohash;
         }
 
         console.log(videohash + " detected");
@@ -129,12 +127,12 @@ async function pinMedia(metadata) {
   try {
     console.log("Checking size");
     metadata = await utils.checkSize(metadata);
+
     if (metadata !== null) {
       console.log("Pinning the content, please wait...");
-      const pinset = await ipfs.pin.add(metadata.pinset);
+      await ipfs.pin.add(metadata.pinset);
 
-      var size = 0;
-
+      let size = 0;
       const parts = await ipfs.ls(metadata.pinset);
 
       parts.forEach(function (part) {
@@ -164,7 +162,6 @@ async function pinMedia(metadata) {
  * Add a pin
  * @param author
  * @param permlink
- * @param cbAdd
  * @returns {Promise<boolean>}
  */
 async function addPin(author, permlink) {
@@ -174,7 +171,7 @@ async function addPin(author, permlink) {
   }
 
   if (utils.ifExistInDB(metadata)) {
-    console.log(metadata.pinset + " already exist in db. skip it")
+    console.log(metadata.pinset + " already exist in db. skip it");
     return false;
   }
 
@@ -187,7 +184,7 @@ async function addPin(author, permlink) {
   if (utils.ifExistInDB(metadata)) {
     return true;
   } else {
-    metadata_store = db.getSync("metadata_store");
+    let metadata_store = db.getSync("metadata_store");
     const possibleError = metadata_store.toString();
     if (possibleError === "Error: could not load data") {
       metadata_store = [];
@@ -196,7 +193,7 @@ async function addPin(author, permlink) {
     metadata_store.push(metadata);
 
     await db.save("metadata_store", metadata_store, function (err) {
-      console.log("############# " + metadata.pinset + " metadata stored");
+      console.log("############# " + metadata.pinset + " metadata stored", err);
       return true;
     });
   }
