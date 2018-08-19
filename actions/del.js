@@ -80,7 +80,7 @@ filterByPinset = function (pinset, metadata) {
 remove = async function (metadata) {
   try {
     console.log("Metadata", metadata);
-    for (let mi=0; mi<metadata.length; mi++) {
+    for (let mi = 0; mi < metadata.length; mi++) {
       const el = metadata[mi];
       const pinset = await ipfs.pin.rm(el.pinset, {recursive: true});
       console.log(pinset[0].hash + " removed");
@@ -89,9 +89,9 @@ remove = async function (metadata) {
     let metadata_store = db.getSync("metadata_store");
     const possibleError = metadata_store.toString();
     if (possibleError !== "Error: could not load data") {
-      for (let mi=0; mi<metadata.length; mi++) {
+      for (let mi = 0; mi < metadata.length; mi++) {
         let el = metadata[mi];
-        metadata_store = metadata_store.filter(function(re) {
+        metadata_store = metadata_store.filter(function (re) {
           return re.pinset != el.pinset
         });
       }
@@ -103,7 +103,7 @@ remove = async function (metadata) {
     await ipfs.repo.gc();
     console.log("Garbade collector done")
 
-  } catch(err) {
+  } catch (err) {
     console.log("[err][remove]", err);
   }
 }
