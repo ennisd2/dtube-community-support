@@ -1,17 +1,10 @@
-const steem = require('steem');
 const ipfsAPI = require('ipfs-api');
 const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-const config = require('config.json')('./../config.json');
 const Store = require("jfs");
 const db = new Store("./data");
 
-const list = require('./list.js');
-const utils = require('../utils/utils.js');
-
-
 const args = require('parse-cli-arguments')({
   options: {
-
     pinset: {alias: 'p'},
     author: {alias: 'a'},
     date: {alias: 'd'}
@@ -36,12 +29,12 @@ function onlyUnique(value, index, self) {
  * @returns {*}
  */
 filterByAuthor = function (author, metadata) {
-  metadataFilter = metadata.filter(result => {
-    return result.author == author
+  let metadataFilter = metadata.filter(result => {
+    return result.author === author
   });
 
   return metadataFilter;
-}
+};
 
 /**
  *
@@ -50,13 +43,12 @@ filterByAuthor = function (author, metadata) {
  * @returns {*}
  */
 filterByDate = function (date, metadata) {
-  metadataFilter = metadata.filter(result => {
+  let metadataFilter = metadata.filter(result => {
     return new Date(result.date) < date;
   });
 
   return metadataFilter;
-
-}
+};
 
 /**
  *
@@ -65,13 +57,12 @@ filterByDate = function (date, metadata) {
  * @returns {*}
  */
 filterByPinset = function (pinset, metadata) {
-  metadataFilter = metadata.filter(result => {
-    return result.pinset == pinset
+  let metadataFilter = metadata.filter(result => {
+    return result.pinset === pinset
   });
 
   return metadataFilter;
-
-}
+};
 
 /**
  *
@@ -92,7 +83,7 @@ remove = async function (metadata) {
       for (let mi = 0; mi < metadata.length; mi++) {
         let el = metadata[mi];
         metadata_store = metadata_store.filter(function (re) {
-          return re.pinset != el.pinset
+          return re.pinset !== el.pinset
         });
       }
     }
@@ -106,13 +97,13 @@ remove = async function (metadata) {
   } catch (err) {
     console.log("[err][remove]", err);
   }
-}
+};
 
 /**
  *
  */
 exports.main = function () {
-  if (args.pinset != undefined) {
+  if (args.pinset !== undefined) {
     db.get("metadata_store", function (err, metadata) {
       pinset = args.pinset;
       result = filterByPinset(pinset, metadata);
@@ -126,7 +117,7 @@ exports.main = function () {
     });
 
   }
-  else if (args.date != undefined) {
+  else if (args.date !== undefined) {
     date = new Date(args.date);
     if (!isNaN(date.getTime())) {
 
@@ -143,7 +134,7 @@ exports.main = function () {
     }
     else console.log("no valid date provided");
   }
-  else if (args.author != undefined) {
+  else if (args.author !== undefined) {
     db.get("metadata_store", function (err, metadata) {
       author = args.author;
       result = filterByAuthor(author, metadata);
