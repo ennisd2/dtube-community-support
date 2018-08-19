@@ -1,12 +1,9 @@
-const steem = require('steem');
-const ipfsAPI = require('ipfs-api');
-const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
 const config = require('config.json')('./config.json');
 const Store = require("jfs");
 const db = new Store("data");
 const {createClient} = require('lightrpc');
 const bluebird = require('bluebird');
-const async = require("async");
+
 const utils = require('./utils/utils.js');
 
 // set rpc node
@@ -33,13 +30,13 @@ let args = require('parse-cli-arguments')({
 function start() {
   utils.checkIPFSAsync();
 
-  if (args.blockNumber != undefined) {
+  if (args.blockNumber !== undefined) {
     // take blockNumber passed thought argument
     logger.info("Start Dtube Community Support at block : " + args.blockNumber);
     utils.catchup(Number(args.blockNumber));
   }
   else {
-    var state = db.getAsync("block_state");
+    let state = db.getAsync("block_state");
     state.then(result => {
       // Start from the last block number stored in JFS DB
       logger.info("Start Dtube Community Support at block : " + result.blockNumber);
@@ -68,11 +65,10 @@ function failover() {
   if (config.rpc_nodes && config.rpc_nodes.length > 1) {
     cur_node_index += 1;
 
-    if (cur_node_index == config.rpc_nodes.length)
+    if (cur_node_index === config.rpc_nodes.length)
       cur_node_index = 0;
 
-    var rpc_node = config.rpc_nodes[cur_node_index];
-
+    let rpc_node = config.rpc_nodes[cur_node_index];
 
     lightrpc = createClient(rpc_node);
     bluebird.promisifyAll(lightrpc);
