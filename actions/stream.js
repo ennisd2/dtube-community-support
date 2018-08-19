@@ -49,24 +49,25 @@ function isObject(val) {
  */
 function streamOps(ops) {
   ops.forEach(function (op) {
-    var result = {};
+    let result = {};
     result = op.op;
     db = new Store("./data");
-    if (result[0] == 'comment') {
+    if (result[0] === 'comment') {
 
       //verify if no a response and if json_metadata is not empty
       //if(result[1].parent_author == "" && result[1].json_metadata!='{}' && result[1].json_metadata!="" && result[1].json_metadata!='null')
       //{}
-      if (result[1].parent_author === "" && result[1].json_metadata != "{}") {
+      if (result[1].parent_author === "" && result[1].json_metadata !== "{}") {
         try {
           // test if json_metadata can be parsed
-          json_metadata = JSON.parse(result[1].json_metadata);
+          let json_metadata = JSON.parse(result[1].json_metadata);
           // test if json_metadata is an object
-          if (!json_metadata || typeof json_metadata !== 'object') throw new Error('Wrong type:', typeof json_metadata);
+          if (!json_metadata || typeof json_metadata !== 'object')
+            throw new Error('Wrong type:', typeof json_metadata);
           //verify if app is not undefined and not an object (dtube app is defined as a string)
 
           // Check app is not empty and not an object
-          if (json_metadata.app != '{}' && json_metadata.app != "" && json_metadata.app != undefined && !isObject(json_metadata.app)) {
+          if (json_metadata.app !== '{}' && json_metadata.app !== "" && json_metadata.app !== undefined && !isObject(json_metadata.app)) {
 
             //select dtube publication
             if (json_metadata.app.includes(dtube_app)) {
@@ -79,15 +80,15 @@ function streamOps(ops) {
                   [
                     function (callback) {
                       //collect videhash inside metadata
-                      if (json_metadata.video.content.video480hash != undefined && json_metadata.video.content.video480hash != "") {
-                        var hash = json_metadata.video.content.video480hash;
+                      if (json_metadata.video.content.video480hash !== undefined && json_metadata.video.content.video480hash !== "") {
+                        let hash = json_metadata.video.content.video480hash;
                       }
                       else {
                         // if 480p not available
-                        var hash = json_metadata.video.content.videohash;
+                        let hash = json_metadata.video.content.videohash;
                       }
-                      logger.info("############# " + hash + " detected")
-                      output = {};
+                      logger.info("############# " + hash + " detected");
+                      let output = {};
                       output.pinset = hash;
                       callback(null, output)
                     },
@@ -95,11 +96,11 @@ function streamOps(ops) {
                     function (input, exist, callback) {
                       if (!exist) {
                         // Do no try to pin video if already in DB
-                        logger.info(input.pinset + " not in DB.")
+                        logger.info(input.pinset + " not in DB.");
                         callback(null, input);
                       }
                       else {
-                        logger.info(input.pinset + " already exist. skip it")
+                        logger.info(input.pinset + " already exist. skip it");
                         // delete entrie in temp 'save' var
                         save = save.filter(function (el) {
                           return el !== input.pinset;
@@ -119,7 +120,7 @@ function streamOps(ops) {
                     function (input, callback) {
                       ipfs.pin.add(input.pinset, function (err1, pinset) {
                         //Pin ressource
-                        size = 0;
+                        let size = 0;
                         ipfs.ls(input.pinset, function (err2, parts) {
                           parts.forEach(function (part) {
                             size += part.size;
@@ -158,7 +159,7 @@ function streamOps(ops) {
                           return el !== metadata.pinset;
                         });
                         // content not pinned, substract content size
-                        size_tmp -= content_size;
+                        size_tmp -= metadata.size;
                         callback(true);
                       }
                     },
@@ -185,8 +186,7 @@ function streamOps(ops) {
     }
 
   });
-};
-
+}
 
 function ifAdding(input, callback) {
   // check if pinset is in 'save'
@@ -210,11 +210,11 @@ function ifAdding(input, callback) {
  * @param cbSize
  */
 function checkSize(metadata, cbSize) {
-  logger.error("Try to find seed for : ", metadata.pinset)
+  logger.error("Try to find seed for : ", metadata.pinset);
   // launch go-ipfs ls pinset command
-  var ipfsLsProcess = spawn('ipfs', ['ls', metadata.pinset]);
+  let ipfsLsProcess = spawn('ipfs', ['ls', metadata.pinset]);
 
-  var timeout = setTimeout(function () {
+  let timeout = setTimeout(function () {
     save = save.filter(function (el) {
       return el !== metadata.pinset;
     });
@@ -226,7 +226,7 @@ function checkSize(metadata, cbSize) {
   }, LSTIMEOUT);
 
   ipfsLsProcess.stderr.on('data', (data) => {
-    if (data.toString() != "Error: api not running\n") {
+    if (data.toString() !== "Error: api not running\n") {
       // No response from ipfs ls. Pass to the next pinset
       logger.info('cannot fetch (', metadata.pinset, ') size in : ', LSTIMEOUT / 1000, ' seconds');
       // delete entrie in temp 'save' var
@@ -238,21 +238,21 @@ function checkSize(metadata, cbSize) {
     }
     else {
       // IPFS is not running. Stop the script (with callback of main waterfall)
-      console.log("IPFS is not running")
+      console.log("IPFS is not running");
       // delete entrie in temp 'save' var
       save = save.filter(function (el) {
         return el !== metadata.pinset;
       });
 
-      clearTimeout(timeout)
+      clearTimeout(timeout);
       process.exit();
     }
   });
   ipfsLsProcess.stdout.on('data', (data) => {
     // calcul contente size
-    if (data.toString() != '\n') {
-      var size = 0;
-      part = data.toString().split('\n');
+    if (data.toString() !== '\n') {
+      let size = 0;
+      let part = data.toString().split('\n');
       part = part.filter(function (el) {
         return el !== '';
       });
