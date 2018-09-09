@@ -17,6 +17,11 @@ services:
     volumes:
       - ./data:/opt/dcs/data:delegated
       - ./log:/opt/dcs/log:delegated
+      - ./docker:/opt/dcs/docker:delegated
+      - ./utils:/opt/dcs/utils:delegated
+      - ./actions:/opt/dcs/actions:delegated
+      - ./index.js:/opt/dcs/index.js:delegated
+      - ./config.json:/opt/dcs/config.json:delegated
     working_dir: /opt/dcs
     command: sh ./docker/run.sh
     networks:

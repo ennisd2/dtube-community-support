@@ -1,146 +1,150 @@
-const steem = require('steem');
-var ipfsAPI = require('ipfs-api');
-var ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
-var config = require('config.json')('./../config.json');
-var Store = require("jfs");
-var db = new Store("./data");
-var async = require("async");
+const ipfsAPI = require('ipfs-api');
+const ipfs = ipfsAPI('localhost', '5001', {protocol: 'http'});
+const Store = require("jfs");
+const db = new Store("./data");
 
-var list = require('./list.js');
-var utils=require('../utils/utils.js');
-
-
-let args = require('parse-cli-arguments')({
-    options: {
-
-        pinset: { alias: 'p' },
-        author: { alias: 'a'},
-        date: { alias: 'd'}
-    }
+const args = require('parse-cli-arguments')({
+  options: {
+    pinset: {alias: 'p'},
+    author: {alias: 'a'},
+    date: {alias: 'd'}
+  }
 });
 
-function onlyUnique(value, index, self) { 
-    return self.indexOf(value) === index;
+/**
+ *
+ * @param value
+ * @param index
+ * @param self
+ * @returns {boolean}
+ */
+function onlyUnique(value, index, self) {
+  return self.indexOf(value) === index;
 }
 
-filterByAuthor = function(author,metadata) {
-	metadataFilter = metadata.filter(result => {
-		return result.author==author
-	});
+/**
+ *
+ * @param author
+ * @param metadata
+ * @returns {*}
+ */
+filterByAuthor = function (author, metadata) {
+  let metadataFilter = metadata.filter(result => {
+    return result.author === author
+  });
 
-	return metadataFilter;
-}
- 
-filterByDate = function(date, metadata) {
-	metadataFilter = metadata.filter(result => {
-		 return new Date(result.date) < date;
-	});
+  return metadataFilter;
+};
 
-	return metadataFilter;
+/**
+ *
+ * @param date
+ * @param metadata
+ * @returns {*}
+ */
+filterByDate = function (date, metadata) {
+  let metadataFilter = metadata.filter(result => {
+    return new Date(result.date) < date;
+  });
 
-}
+  return metadataFilter;
+};
 
-filterByPinset = function(pinset, metadata) {
-	metadataFilter = metadata.filter(result => {
-		 return result.pinset==pinset
-	});
+/**
+ *
+ * @param pinset
+ * @param metadata
+ * @returns {*}
+ */
+filterByPinset = function (pinset, metadata) {
+  let metadataFilter = metadata.filter(result => {
+    return result.pinset === pinset
+  });
 
-	return metadataFilter;
+  return metadataFilter;
+};
 
-}
+/**
+ *
+ * @param metadata
+ */
+remove = async function (metadata) {
+  try {
+    console.log("Metadata", metadata);
+    for (let mi = 0; mi < metadata.length; mi++) {
+      const el = metadata[mi];
+      const pinset = await ipfs.pin.rm(el.pinset, {recursive: true});
+      console.log(pinset[0].hash + " removed");
+    }
 
-remove = function(metadata) {
+    let metadata_store = db.getSync("metadata_store");
+    const possibleError = metadata_store.toString();
+    if (possibleError !== "Error: could not load data") {
+      for (let mi = 0; mi < metadata.length; mi++) {
+        let el = metadata[mi];
+        metadata_store = metadata_store.filter(function (re) {
+          return re.pinset !== el.pinset
+        });
+      }
+    }
 
-	async.waterfall([
-		function(callback) {
+    db.saveSync("metadata_store", metadata_store);
 
-			async.forEachOf(metadata,function(el,i,cb) {
-				ipfs.pin.rm(el.pinset, { recursive: true },function(err,pinset){
-					if(!err) console.log(pinset[0].hash + " removed");
-					cb();
+    console.log("Running Garbage collector. Please wait..");
+    await ipfs.repo.gc();
+    console.log("Garbade collector done")
 
-				});
-			}, function(err) {
-				callback(null,metadata);
-			});
+  } catch (err) {
+    console.log("[err][remove]", err);
+  }
+};
 
-	
+/**
+ *
+ */
+exports.main = function () {
+  if (args.pinset !== undefined) {
+    db.get("metadata_store", function (err, metadata) {
+      pinset = args.pinset;
+      result = filterByPinset(pinset, metadata);
+      if (result.length > 0) {
+        remove(result);
+      }
+      else {
+        console.log(pinset + " not found in DB");
+      }
 
-		},
-		function(metadata,callback){
-			db.get("metadata_store", function(err, metadata_store){
-				metadata.forEach(result => {
-					metadata_store = metadata_store.filter(re => {return re.pinset!=result.pinset});
-				})
-				callback(null,metadata_store);
-			})
-		},
-		function(metadata_store,callback) {
-			db.save("metadata_store", metadata_store, function(err){
-				callback(null)
-			});
-		},
-		function(callback) {
-			console.log("Running Garbage collector. Please wait..");
-			ipfs.repo.gc(function(err, res){
-				if(!err) {
-					console.log("Garbade collector done")
-				}
-				else {
-					console.log(err);
-				}
-			});
+    });
 
-		}
-	]);
+  }
+  else if (args.date !== undefined) {
+    date = new Date(args.date);
+    if (!isNaN(date.getTime())) {
 
-}
+      db.get("metadata_store", function (err, metadata) {
+        result = filterByDate(date, metadata);
+        if (result.length > 0) {
+          remove(result);
+        }
+        else {
+          console.log("no entrie found in DB before : " + date);
+        }
 
+      });
+    }
+    else console.log("no valid date provided");
+  }
+  else if (args.author !== undefined) {
+    db.get("metadata_store", function (err, metadata) {
+      author = args.author;
+      result = filterByAuthor(author, metadata);
+      if (result.length > 0) {
+        remove(result);
+      }
+      else {
+        console.log(author + " not found in DB");
+      }
+    });
 
-exports.main = function() {
-	if(args.pinset != undefined) {
-		db.get("metadata_store", function(err, metadata){
-			pinset = args.pinset;
-			result = filterByPinset(pinset, metadata);
-			if(result.length>0){
-				remove(result);
-			}
-			else {
-				console.log(pinset + " not found in DB");
-			}
-
-		});
-
-	}
-	else if(args.date != undefined) {
-		date = new Date(args.date);
-		if(!isNaN(date.getTime()))
-		{
-
-			db.get("metadata_store", function(err, metadata){
-					result = filterByDate(date, metadata);
-					if(result.length>0){
-						remove(result);
-					}
-					else {
-						console.log("no entrie found in DB before : " + date);
-					}
-
-			});
-		}
-		else console.log("no valid date provided");
-	}
-	else if (args.author != undefined) {
-		db.get("metadata_store", function(err, metadata){
-			author = args.author;
-			result = filterByAuthor(author, metadata);
-			if(result.length>0){
-				remove(result);
-			}
-			else {
-				console.log(author + " not found in DB");
-			}
-		});
-
-	}
+  }
 };
